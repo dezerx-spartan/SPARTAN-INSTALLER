@@ -8,7 +8,7 @@ src/
   main.sh                 loads the modules in a checkout and calls spartan_main
   modules.list            load order (also used by the build)
   core/                   settings, helpers, log, command line, task runner, plans
-  ui/                     theme, terminal, text layout, drawing, logo, widgets, forms, line mode, progress
+  ui/                     theme, terminal, text layout, drawing, widgets, forms, line mode, progress
   system/                 OS detection, packages, services, preflight, swap, time, network, firewall, SELinux
   stack/                  PHP, ionCube, Composer, Node.js, Nginx, database, Redis, SSL
   app/                    detection, .env, license, release download, options file, preserving

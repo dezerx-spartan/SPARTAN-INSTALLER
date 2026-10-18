@@ -2,7 +2,7 @@
 # Screen composition. Every frame is built in FB and written in one go so the
 # screen never flickers, even over slow SSH links.
 #
-#   ┌ header ──────── DezerX Spartan Installer ▓▓▒▒░░          v2.0.0 · step 2 of 7 ┐
+#   ┌ header       ░▒▓█ DezerX Spartan Installer █▓▒░        v2.0.0 · step 2 of 7 ┐
 #   │                                                                              │
 #   │                ┌──────────────┤ Title ├──────────────┐                       │
 #   │                │ dialog                              │▌                      │
@@ -52,40 +52,41 @@ ui_header_height() {
     if ((TERM_ROWS >= 30)); then HEADER_H=3; else HEADER_H=1; fi
 }
 
-# The header: brand block on the accent colour fading into the background,
-# with the version and step on the right (in the spirit of the AMP 3 installer).
+# The header: the title block centred on the accent colour, fading smoothly
+# into the background on both sides, with the version and step on the right
+# (in the spirit of the AMP 3 installer).
 ui_draw_header() {
     ui_header_height
     local title="DezerX Spartan Installer"
-    local tlen=${#title} r mid fade_w meta logo_w=0
+    local tlen=${#title} r mid fade_w meta i
     mid=$(((HEADER_H + 1) / 2))
-    logo_mini_available && logo_w=$((${#LOGO_MINI[0]} + 2))
-    local block_w=$((2 + logo_w + tlen + 3))
-    fade_w=$((TERM_COLS / 4))
-    ((fade_w > 40)) && fade_w=40
-    ((fade_w < 6)) && fade_w=6
+    local block_w=$((tlen + 6))
+    local block_c=$(((TERM_COLS - block_w) / 2 + 1))
 
     meta="v${SPARTAN_VERSION%%-*}"
     [[ -n "$UI_STEP_TEXT" ]] && meta+="  ${G_DOT}  ${UI_STEP_TEXT}"
     meta+=" "
 
-    local fade="" q=$((fade_w / 4)) i
+    # Each fade stops short of the meta text on the right; both stay the same width.
+    fade_w=$((block_c - 1 - ${#meta} - 2))
+    ((fade_w > 48)) && fade_w=48
+    ((fade_w < 0)) && fade_w=0
+    ui_fade_init "$fade_w"
+    local left="" right=""
     for ((i = 0; i < fade_w; i++)); do
-        if ((i < q)); then fade+="$G_SHADE1"
-        elif ((i < q * 2)); then fade+="$G_SHADE2"
-        elif ((i < q * 3)); then fade+="$G_SHADE3"
-        else fade+=" "
-        fi
+        right+="${HEAD_FADE[i]}"
+        left="${HEAD_FADE[i]}${left}"
     done
 
     for ((r = 1; r <= HEADER_H; r++)); do
         fb_rect "$r" 1 1 "$TERM_COLS" "$S_ROOT"
-        fb_rect "$r" 1 1 "$block_w" "$S_HEAD"
-        ((UI_DEPTH == 0)) || fb_text "$r" $((block_w + 1)) "$S_HEAD_FADE" "$fade"
+        fb_rect "$r" "$block_c" 1 "$block_w" "$S_HEAD"
+        ((fade_w)) || continue
+        fb_text "$r" $((block_c - fade_w)) "" "$left"
+        fb_text "$r" $((block_c + block_w)) "" "$right"
     done
-    ((logo_w)) && ui_draw_header_logo 1 3
-    fb_text "$mid" $((3 + logo_w)) "$S_HEAD" "$title"
-    if ((${#meta} + block_w + fade_w < TERM_COLS)); then
+    fb_text "$mid" $((block_c + 3)) "$S_HEAD" "$title"
+    if ((block_c + block_w + fade_w + ${#meta} <= TERM_COLS)); then
         fb_text "$mid" $((TERM_COLS - ${#meta})) "$S_HEAD_META" "$meta"
     fi
 }
@@ -97,12 +98,11 @@ ui_draw_footer() {
     fb_text "$TERM_ROWS" 1 "$S_FOOT" "$TEXT_OUT"
 }
 
-# Background, header, footer and watermark. Rebuilt when the terminal size,
+# Background, header and footer. Rebuilt when the terminal size,
 # step text or hints change; otherwise reused between key presses.
 ui_draw_base() {
     fb_rect 1 1 "$TERM_ROWS" "$TERM_COLS" "$S_ROOT"
     ui_draw_header
-    ui_draw_logo
     ui_draw_footer
 }
 

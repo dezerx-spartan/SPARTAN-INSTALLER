@@ -26,10 +26,6 @@ accentfg     255 255 255     231   7
 ok           58 217 138      42    2
 warn         255 184 77      215   3
 err          255 97 97       203   1
-logod        38 45 57        236   8
-logox        22 50 89        17    4
-hdrd         255 255 255     231   7
-hdrx         8 36 82         17    4
 EOF
 }
 
@@ -97,20 +93,20 @@ ui_theme_init() {
 
     local R=$'\e[0m'
     if ((UI_DEPTH == 0)); then
-        S_ROOT=$R S_HEAD=$'\e[0;7;1m' S_HEAD_FADE=$R S_HEAD_META=$R S_FOOT=$'\e[0;7m'
+        S_ROOT=$R S_HEAD=$'\e[0;7;1m' S_HEAD_META=$R S_FOOT=$'\e[0;7m'
         S_PANEL=$R S_MUTED=$'\e[0;2m' S_DIM=$'\e[0;2m' S_BORDER=$R S_TITLE=$'\e[0;1m'
         S_BTN=$R S_BTN_ON=$'\e[0;7;1m' S_SEL=$'\e[0;7m' S_SEL_OFF=$'\e[0;4m' S_INPUT=$'\e[0;4m' S_INPUT_ON=$'\e[0;4;1m'
         S_INPUT_OFF=$'\e[0;2m' S_OK=$'\e[0;1m' S_WARN=$'\e[0;1m' S_ERR=$'\e[0;1m' S_ACCENT=$'\e[0;1m' S_BOLD=$'\e[0;1m'
-        S_SHADOW=$R S_SHADE=$R S_LOGO_D=$R S_LOGO_X=$R S_BAR=$'\e[0;1m' S_BAR_BG=$'\e[0;2m' S_DANGER=$'\e[0;1m' S_CURSOR=$'\e[0;7m'
+        S_SHADOW=$R S_SHADE=$R S_BAR=$'\e[0;1m' S_BAR_BG=$'\e[0;2m' S_DANGER=$'\e[0;1m' S_CURSOR=$'\e[0;7m'
         T_B=$'\e[1m' T_D=$'\e[22;2m' T_A=$'\e[1m' T_OK=$'\e[1m' T_W=$'\e[1m' T_E=$'\e[1m'
         return 0
     fi
 
-    local f_text f_bright f_muted f_dim f_accent f_accentfg f_ok f_warn f_err f_root f_shadow f_logod f_logox
+    local f_text f_bright f_muted f_dim f_accent f_accentfg f_ok f_warn f_err f_root f_shadow
     local b_root b_panel b_input b_shadow b_accent b_accentdim
     f_text="$(_ui_fg text)"; f_bright="$(_ui_fg bright)"; f_muted="$(_ui_fg muted)"; f_dim="$(_ui_fg dim)"
     f_accent="$(_ui_fg accent)"; f_accentfg="$(_ui_fg accentfg)"; f_ok="$(_ui_fg ok)"; f_warn="$(_ui_fg warn)"
-    f_err="$(_ui_fg err)"; f_root="$(_ui_fg root)"; f_shadow="$(_ui_fg shadow)"; f_logod="$(_ui_fg logod)"; f_logox="$(_ui_fg logox)"
+    f_err="$(_ui_fg err)"; f_root="$(_ui_fg root)"; f_shadow="$(_ui_fg shadow)"
     b_root="$(_ui_bg root)"; b_panel="$(_ui_bg panel)"; b_input="$(_ui_bg input)"; b_shadow="$(_ui_bg shadow)"
     b_accent="$(_ui_bg accent)"; b_accentdim="$(_ui_bg accentdim)"
 
@@ -125,7 +121,6 @@ ui_theme_init() {
 
     S_ROOT="${R}${f_text}${b_root}"
     S_HEAD="${R}${f_accentfg}${b_accent}"$'\e[1m'
-    S_HEAD_FADE="${R}${f_accent}${b_root}"
     S_HEAD_META="${R}${f_muted}${b_root}"
     S_FOOT="${R}${f_accentfg}${b_accent}"
     S_PANEL="${R}${f_text}${b_panel}"
@@ -147,8 +142,6 @@ ui_theme_init() {
     S_BOLD="${R}${f_bright}${b_panel}"$'\e[1m'
     S_SHADOW="${R}${f_shadow}${b_shadow}"
     S_SHADE="${R}${f_shadow}${b_root}"
-    S_LOGO_D="${R}${f_logod}${b_root}"
-    S_LOGO_X="${R}${f_logox}${b_root}"
     S_BAR="${R}${f_accent}${b_panel}"
     S_BAR_BG="${R}${f_dim}${b_panel}"
     S_DANGER="${R}${f_err}${b_panel}"
@@ -163,6 +156,54 @@ ui_theme_init() {
     T_OK=$'\e[22m'"${f_ok}"
     T_W=$'\e[22m'"${f_warn}"
     T_E=$'\e[22m'"${f_err}"
+}
+
+# _ui_rgb256 <r> <g> <b> - nearest xterm-256 colour (6x6x6 cube or grey ramp).
+_ui_rgb256() {
+    local v ci=() d_cube=0 grey gi gv d
+    for v in "$1" "$2" "$3"; do
+        if ((v < 48)); then ci+=(0); elif ((v < 115)); then ci+=(1); else ci+=($(((v - 35) / 40))); fi
+        d=$((v - (ci[-1] ? ci[-1] * 40 + 55 : 0)))
+        d_cube=$((d_cube + d * d))
+    done
+    grey=$((($1 + $2 + $3) / 3))
+    gi=$(((grey - 3) / 10)); ((gi < 0)) && gi=0; ((gi > 23)) && gi=23
+    gv=$((gi * 10 + 8))
+    local dg=$((($1 - gv) ** 2 + ($2 - gv) ** 2 + ($3 - gv) ** 2))
+    if ((dg < d_cube)); then REPLY=$((232 + gi)); else REPLY=$((16 + ci[0] * 36 + ci[1] * 6 + ci[2])); fi
+}
+
+# ui_fade_init <cells> - HEAD_FADE[0..cells-1]: styles easing from the accent
+# (index 0, next to the title block) into the background. 24-bit and 256
+# colour terminals get a background gradient; 16 colours get shade glyphs.
+declare -a HEAD_FADE=()
+HEAD_FADE_KEY=""
+ui_fade_init() {
+    local n="$1" i t e r g b
+    [[ "$HEAD_FADE_KEY" != "$n|$UI_DEPTH|$UI_UTF8" ]] || return 0
+    HEAD_FADE_KEY="$n|$UI_DEPTH|$UI_UTF8"
+    HEAD_FADE=()
+    local -a a z
+    read -ra a <<<"${UI_RGB[accent]}"
+    read -ra z <<<"${UI_RGB[root]}"
+    for ((i = 0; i < n; i++)); do
+        # smoothstep over 0..1000, so both ends blend in without a visible edge
+        t=$(((i + 1) * 1000 / (n + 1)))
+        e=$((t * t * (3000 - 2 * t) / 1000000))
+        r=$((a[0] + (z[0] - a[0]) * e / 1000))
+        g=$((a[1] + (z[1] - a[1]) * e / 1000))
+        b=$((a[2] + (z[2] - a[2]) * e / 1000))
+        case "$UI_DEPTH" in
+            24) HEAD_FADE+=($'\e[0;48;2;'"$r;$g;${b}m ") ;;
+            256) _ui_rgb256 "$r" "$g" "$b"; HEAD_FADE+=($'\e[0;48;5;'"${REPLY}m ") ;;
+            16)
+                local gl=" "
+                if ((e < 250)); then gl="$G_SHADE1"; elif ((e < 500)); then gl="$G_SHADE2"; elif ((e < 750)); then gl="$G_SHADE3"; fi
+                HEAD_FADE+=("$(_ui_fg accent)$(_ui_bg root)${gl}")
+                ;;
+            *) HEAD_FADE+=($'\e[0m ') ;;
+        esac
+    done
 }
 
 ui_glyphs_init() {

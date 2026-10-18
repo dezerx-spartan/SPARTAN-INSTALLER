@@ -11,7 +11,6 @@ ui/theme.sh
 ui/term.sh
 ui/text.sh
 ui/draw.sh
-ui/logo.sh
 ui/widgets.sh
 ui/form.sh
 ui/line.sh
