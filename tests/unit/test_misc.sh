@@ -88,3 +88,21 @@ test_nginx_vhost_rendering() {
     [[ "$out" == *"fastcgi_pass unix:/run/php/php8.4-fpm.sock;"* ]]
     assert_eq 0 $? "php-fpm vhost"
 }
+
+test_db_option_file_works_for_dump_tools() {
+    RUN_DIR="$T_TMP" DB_HOST=127.0.0.1 DB_PORT=1 DB_USER=dezer DB_PASS='p"a\ss' DB_ROOT_PASS=""
+    db_app_cnf
+    local cnf="$REPLY" client_section
+    client_section="$(awk '/^\[/{s=$0} s=="[client]"' "$cnf")"
+    [[ "$client_section" != *connect-timeout* ]]
+    assert_eq 0 $? "[client] holds only options every client tool knows"
+    assert_eq 600 "$(stat -c %a "$cnf")" "credentials file is private"
+    # With a real dump tool installed, the file must get past option parsing
+    # (port 1 is closed, so the run stops at "can't connect").
+    local dump
+    dump="$(command -v mariadb-dump || command -v mysqldump)" || return 0
+    local out
+    out="$(timeout 15 "$dump" --defaults-extra-file="$cnf" --no-tablespaces x 2>&1 >/dev/null)"
+    [[ "$out" != *"unknown variable"* ]]
+    assert_eq 0 $? "dump tool accepts the option file (${out%%$'\n'*})"
+}

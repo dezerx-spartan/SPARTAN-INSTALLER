@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.0-beta.2
+
+### Fixed
+
+- Database backups failed with `mariadb-dump: unknown variable 'connect-timeout=10'` (also `mysqldump`). The installer's private credentials file set `connect-timeout` for all client tools; it now applies only to the `mysql`/`mariadb` client.
+
 ## 2.0.0-beta.1
 
 First test build of 2.0.0. A rewrite of the 1.x installer (last release: 1.6.4 "Theme Fixes"). The behaviour of 1.x is kept unless listed here; existing installations are updated in place.

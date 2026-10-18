@@ -21,6 +21,15 @@ _cnf_escape() {
     printf '%s' "$v"
 }
 
+# Options only the interactive client understands. mysqldump/mariadb-dump read
+# [client] as well and abort on options they do not know ("unknown variable
+# 'connect-timeout=10'"), so these go in the [mysql] group.
+_cnf_client_only() {
+    echo
+    echo "[mysql]"
+    echo "connect-timeout=10"
+}
+
 # db_app_cnf - option file with the application's credentials; path in REPLY.
 db_app_cnf() {
     local f="${RUN_DIR}/db-app.cnf"
@@ -32,7 +41,7 @@ db_app_cnf() {
             echo "port=${DB_PORT}"
             echo "user=\"$(_cnf_escape "$DB_USER")\""
             echo "password=\"$(_cnf_escape "$DB_PASS")\""
-            echo "connect-timeout=10"
+            _cnf_client_only
         } >"$f"
     )
     REPLY="$f"
@@ -46,7 +55,7 @@ db_root_cnf() {
             echo "[client]"
             echo "user=root"
             [[ -n "$DB_ROOT_PASS" ]] && echo "password=\"$(_cnf_escape "$DB_ROOT_PASS")\""
-            echo "connect-timeout=10"
+            _cnf_client_only
         } >"$f"
     )
     REPLY="$f"
