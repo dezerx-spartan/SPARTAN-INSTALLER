@@ -77,7 +77,7 @@ _prog_phase_row() {
             icon="${G_SPIN[frame % ${#G_SPIN[@]}]}" st="$S_ACCENT" lst="$S_BOLD"
             dur="$(fmt_duration $(($(now) - PROG_PHASE_T0)))"
             ;;
-        ok) icon="$G_OK" st="$S_OK" ;;
+        ok) icon="$G_DONE" st="$S_ACCENT" ;;
         warn) icon="$G_WARN" st="$S_WARN" ;;
         fail) icon="$G_FAIL" st="$S_ERR" lst="$S_ERR" ;;
         skip) icon="$G_SKIP" st="$S_DIM" lst="$S_DIM" ;;

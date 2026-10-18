@@ -187,7 +187,7 @@ _ui_rgb256() {
 ui_glyphs_init() {
     if ((UI_UTF8)); then
         G_H='─' G_V='│' G_TL='┌' G_TR='┐' G_BL='└' G_BR='┘' G_TITLE_L='┤' G_TITLE_R='├'
-        G_OK='✔' G_FAIL='✘' G_WARN='!' G_PENDING='○' G_SKIP='–' G_DOT='·' G_BULLET='•'
+        G_OK='✔' G_DONE='●' G_FAIL='✘' G_WARN='!' G_PENDING='○' G_SKIP='–' G_DOT='·' G_BULLET='•'
         G_NEXT='›' G_BACK='‹' G_RADIO_ON='●' G_RADIO_OFF='○' G_CHECK_ON='✔' G_CHECK_OFF=' '
         G_BAR_ON='━' G_BAR_OFF='─' G_ELLIPSIS='…' G_UP='▲' G_DOWN='▼' G_MASK='•'
         G_HALF_UP='▀' G_HALF_DOWN='▄' G_FULL='█'
@@ -195,7 +195,7 @@ ui_glyphs_init() {
         G_ARROWS='↑↓'
     else
         G_H='-' G_V='|' G_TL='+' G_TR='+' G_BL='+' G_BR='+' G_TITLE_L='[' G_TITLE_R=']'
-        G_OK='+' G_FAIL='x' G_WARN='!' G_PENDING='.' G_SKIP='-' G_DOT='-' G_BULLET='*'
+        G_OK='+' G_DONE='o' G_FAIL='x' G_WARN='!' G_PENDING='.' G_SKIP='-' G_DOT='-' G_BULLET='*'
         G_NEXT='>' G_BACK='<' G_RADIO_ON='*' G_RADIO_OFF=' ' G_CHECK_ON='x' G_CHECK_OFF=' '
         G_BAR_ON='#' G_BAR_OFF='-' G_ELLIPSIS='~' G_UP='^' G_DOWN='v' G_MASK='*'
         G_HALF_UP='' G_HALF_DOWN='' G_FULL='#'

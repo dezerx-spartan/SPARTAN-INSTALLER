@@ -30,6 +30,10 @@ os_detect() {
         DISTRO_CODENAME="$(lsb_release -sc 2>/dev/null || true)"
     fi
     PKG_CODENAME="$DISTRO_CODENAME"
+    # Ubuntu 26.04+ ships PHP 8.5; use it.
+    if [[ "$DISTRO_ID" == ubuntu && "${ver%%.*}" =~ ^[0-9]+$ ]] && ((${ver%%.*} >= 26)); then
+        PHP_VER="8.5" PHP_IONCUBE_MAX="8.5"
+    fi
 
     case "$DISTRO_ID" in
         ubuntu) OS_FAMILY="debian" OS_BASE="ubuntu" ;;

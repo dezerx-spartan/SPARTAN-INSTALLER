@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.0-beta.7
+
+### Changed
+
+- Finished steps in the progress view show a blue dot instead of a check mark.
+- Ubuntu 26.04 and newer get PHP 8.5.
+
 ## 2.0.0-beta.6
 
 ### Changed
