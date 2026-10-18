@@ -116,7 +116,7 @@ preflight_summary() {
     local i out="" icon
     for i in "${!PRE_STATE[@]}"; do
         case "${PRE_STATE[i]}" in
-            ok) icon="{ok}${G_OK}{/}" ;;
+            ok) icon=" " ;;
             warn) icon="{w}${G_WARN}{/}" ;;
             *) icon="{e}${G_FAIL}{/}" ;;
         esac

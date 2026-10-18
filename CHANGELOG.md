@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.0-beta.6
+
+### Changed
+
+- The system checks on the welcome screen no longer show a check mark for passing items.
+
 ## 2.0.0-beta.5
 
 ### Changed
