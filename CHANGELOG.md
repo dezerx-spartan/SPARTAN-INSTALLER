@@ -1,8 +1,8 @@
 # Changelog
 
-## 2.0.0
+## 2.0.0-beta.1
 
-A rewrite of the 1.x installer (last release: 1.6.4 "Theme Fixes"). The behaviour of 1.x is kept unless listed here; existing installations are updated in place.
+First test build of 2.0.0. A rewrite of the 1.x installer (last release: 1.6.4 "Theme Fixes"). The behaviour of 1.x is kept unless listed here; existing installations are updated in place.
 
 ### New
 
