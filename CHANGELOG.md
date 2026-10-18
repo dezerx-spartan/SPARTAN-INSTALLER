@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.0-beta.5
+
+### Changed
+
+- The header sits three rows higher above the dialog.
+
 ## 2.0.0-beta.4
 
 ### Changed

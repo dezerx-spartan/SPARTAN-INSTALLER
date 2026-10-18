@@ -191,8 +191,8 @@ ui_draw_header() {
         return 0
     fi
 
-    # Sit directly above the dialog (and its tab), one blank row between.
-    local top=$((DLG_R - HEADER_LOGO - 1 - (${#UI_FLOW} > 0 ? 1 : 0))) i
+    # Sit directly above the dialog (and its tab), three blank rows between.
+    local top=$((DLG_R - HEADER_LOGO - 4 - (${#UI_FLOW} > 0 ? 1 : 0))) i
     ((top < HEADER_TOP)) && top=$HEADER_TOP
     logo_render "$HEADER_LOGO"
     for ((i = 0; i < ${#LOGO_ROWS[@]}; i++)); do
