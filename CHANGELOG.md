@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.0-beta.4
+
+### Changed
+
+- The header now sits directly above the dialog instead of at the top of the screen.
+- The progress bar no longer shows "Done" when finished.
+
 ## 2.0.0-beta.3
 
 ### Changed

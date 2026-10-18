@@ -85,7 +85,7 @@ ui_track() {
         if ((PLAN_RUNNING)); then
             TRACK_LABEL="${TRACK_PCT}%"
         elif ((PLAN_FAILED_INDEX < 0 && SUMMARY_OK)); then
-            TRACK_PCT=100 TRACK_LABEL="${G_OK} Done" TRACK_STATE="ok"
+            TRACK_PCT=100 TRACK_LABEL="" TRACK_STATE="ok"
         else
             TRACK_STATE="fail" TRACK_LABEL="${G_FAIL} Failed"
             ((PLAN_ABORTED)) && TRACK_LABEL="${G_FAIL} Stopped"
@@ -191,7 +191,9 @@ ui_draw_header() {
         return 0
     fi
 
-    local top=$HEADER_TOP i
+    # Sit directly above the dialog (and its tab), one blank row between.
+    local top=$((DLG_R - HEADER_LOGO - 1 - (${#UI_FLOW} > 0 ? 1 : 0))) i
+    ((top < HEADER_TOP)) && top=$HEADER_TOP
     logo_render "$HEADER_LOGO"
     for ((i = 0; i < ${#LOGO_ROWS[@]}; i++)); do
         fb_text $((top + i)) "$left" "" "${LOGO_ROWS[i]}"
