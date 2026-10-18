@@ -13,7 +13,7 @@ KEY_CHAR=""
 
 term_open() {
     [[ -n "$TTY_FD" ]] && return 0
-    exec {TTY_FD}<>/dev/tty 2>/dev/null || { TTY_FD=""; return 1; }
+    { exec {TTY_FD}<>/dev/tty; } 2>/dev/null || { TTY_FD=""; return 1; }
 }
 
 term_size() {

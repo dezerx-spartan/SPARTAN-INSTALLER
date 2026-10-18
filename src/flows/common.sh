@@ -25,7 +25,7 @@ core_locale() {
 
 need_root() {
     [[ $EUID -eq 0 ]] && return 0
-    printf 'Please run the installer as root, for example:\n  sudo bash %s\n' "${0##*/}" >&2
+    printf 'Please run the installer as root, for example:\n  sudo bash spartan_installer.sh\n' >&2
     exit 1
 }
 
