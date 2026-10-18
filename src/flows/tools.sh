@@ -3,7 +3,7 @@
 
 flow_tools() {
     while :; do
-        UI_STEP_TEXT=""
+        UI_STEP=""
         UI_LIST_BACK="${G_BACK} Back" UI_LIST_NEXT="Select ${G_NEXT}"
         ui_menu "Tools" "Maintenance tools for an existing installation." "perms" \
             perms "Repair permissions" "Ownership, file modes and the PHP-FPM user" \

@@ -170,7 +170,7 @@ wizard_run() {
             total=$((total + 1))
             ((k <= i)) && pos=$((pos + 1))
         done
-        UI_STEP_TEXT="step ${pos} of ${total}"
+        UI_STEP="${pos}/${total}"
         "$s"
         rc=$?
         case "$rc" in
@@ -180,7 +180,7 @@ wizard_run() {
             *) return "$rc" ;;
         esac
     done
-    UI_STEP_TEXT=""
+    UI_STEP=""
     ((i >= n))
 }
 
@@ -195,7 +195,7 @@ startup_checks() {
 }
 
 screen_menu() {
-    UI_STEP_TEXT=""
+    UI_STEP="" UI_FLOW=""
     local text="Welcome to the DezerX Spartan installer. What would you like to do?"
     local def="install"
     if [[ -n "$DETECTED_APP_DIR" ]]; then
@@ -315,7 +315,7 @@ summary_show() {
     fi
     text+="\n\n{d}Log: ${LOG}{/}"
     if [[ "$UI_MODE" == tui ]]; then
-        UI_STEP_TEXT=""
+        UI_STEP=""
         if ((SUMMARY_OK)); then
             ui_msgbox "$SUMMARY_TITLE" "$text" "Finish"
         else

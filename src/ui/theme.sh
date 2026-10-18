@@ -26,6 +26,7 @@ accentfg     255 255 255     231   7
 ok           58 217 138      42    2
 warn         255 184 77      215   3
 err          255 97 97       203   1
+track        44 52 66        237   8
 EOF
 }
 
@@ -93,11 +94,13 @@ ui_theme_init() {
 
     local R=$'\e[0m'
     if ((UI_DEPTH == 0)); then
-        S_ROOT=$R S_HEAD=$'\e[0;7;1m' S_HEAD_META=$R S_FOOT=$'\e[0;7m'
+        S_ROOT=$R S_FOOT=$'\e[0;7m' S_BRAND=$'\e[0;1m' S_HDR_X=$'\e[0;1m' S_HDR_MUTED=$'\e[0;2m' S_HDR_LINK=$'\e[0;4m'
+        S_TRACK=$'\e[0;2m' S_TRACK_ON=$'\e[0;1m' S_TRACK_TEXT=$'\e[0;1m' S_TRACK_OK=$'\e[0;1m' S_TRACK_ERR=$'\e[0;1m'
+        S_TAB=$'\e[0;7;1m' S_TAB_DANGER=$'\e[0;7;1m'
         S_PANEL=$R S_MUTED=$'\e[0;2m' S_DIM=$'\e[0;2m' S_BORDER=$R S_TITLE=$'\e[0;1m'
         S_BTN=$R S_BTN_ON=$'\e[0;7;1m' S_SEL=$'\e[0;7m' S_SEL_OFF=$'\e[0;4m' S_INPUT=$'\e[0;4m' S_INPUT_ON=$'\e[0;4;1m'
         S_INPUT_OFF=$'\e[0;2m' S_OK=$'\e[0;1m' S_WARN=$'\e[0;1m' S_ERR=$'\e[0;1m' S_ACCENT=$'\e[0;1m' S_BOLD=$'\e[0;1m'
-        S_SHADOW=$R S_SHADE=$R S_BAR=$'\e[0;1m' S_BAR_BG=$'\e[0;2m' S_DANGER=$'\e[0;1m' S_CURSOR=$'\e[0;7m'
+        S_SHADOW=$R S_SHADE=$R S_DANGER=$'\e[0;1m' S_CURSOR=$'\e[0;7m'
         T_B=$'\e[1m' T_D=$'\e[22;2m' T_A=$'\e[1m' T_OK=$'\e[1m' T_W=$'\e[1m' T_E=$'\e[1m'
         return 0
     fi
@@ -120,9 +123,19 @@ ui_theme_init() {
     fi
 
     S_ROOT="${R}${f_text}${b_root}"
-    S_HEAD="${R}${f_accentfg}${b_accent}"$'\e[1m'
-    S_HEAD_META="${R}${f_muted}${b_root}"
     S_FOOT="${R}${f_accentfg}${b_accent}"
+    # Header (on the background) and the flow tab above dialogs.
+    S_BRAND="${R}${f_bright}${b_root}"$'\e[1m'
+    S_HDR_X="${R}${f_accent}${b_root}"$'\e[1m'
+    S_HDR_MUTED="${R}${f_muted}${b_root}"
+    S_HDR_LINK="${R}${f_accent}${b_root}"
+    S_TRACK="${R}$(_ui_fg track)${b_root}"
+    S_TRACK_ON="${R}${f_accent}${b_root}"
+    S_TRACK_TEXT="${R}${f_text}${b_root}"$'\e[1m'
+    S_TRACK_OK="${R}${f_ok}${b_root}"$'\e[1m'
+    S_TRACK_ERR="${R}${f_err}${b_root}"$'\e[1m'
+    S_TAB="${R}${f_accentfg}${b_accent}"$'\e[1m'
+    S_TAB_DANGER="${R}${f_accentfg}$(_ui_bg err)"$'\e[1m'
     S_PANEL="${R}${f_text}${b_panel}"
     S_MUTED="${R}${f_muted}${b_panel}"
     S_DIM="${R}${f_dim}${b_panel}"
@@ -142,8 +155,6 @@ ui_theme_init() {
     S_BOLD="${R}${f_bright}${b_panel}"$'\e[1m'
     S_SHADOW="${R}${f_shadow}${b_shadow}"
     S_SHADE="${R}${f_shadow}${b_root}"
-    S_BAR="${R}${f_accent}${b_panel}"
-    S_BAR_BG="${R}${f_dim}${b_panel}"
     S_DANGER="${R}${f_err}${b_panel}"
     S_CURSOR="${R}${f_root}"$'\e[48;5;254m'
     ((UI_DEPTH == 24)) && S_CURSOR="${R}${f_root}"$'\e[48;2;226;232;240m'
@@ -173,46 +184,13 @@ _ui_rgb256() {
     if ((dg < d_cube)); then REPLY=$((232 + gi)); else REPLY=$((16 + ci[0] * 36 + ci[1] * 6 + ci[2])); fi
 }
 
-# ui_fade_init <cells> - HEAD_FADE[0..cells-1]: styles easing from the accent
-# (index 0, next to the title block) into the background. 24-bit and 256
-# colour terminals get a background gradient; 16 colours get shade glyphs.
-declare -a HEAD_FADE=()
-HEAD_FADE_KEY=""
-ui_fade_init() {
-    local n="$1" i t e r g b
-    [[ "$HEAD_FADE_KEY" != "$n|$UI_DEPTH|$UI_UTF8" ]] || return 0
-    HEAD_FADE_KEY="$n|$UI_DEPTH|$UI_UTF8"
-    HEAD_FADE=()
-    local -a a z
-    read -ra a <<<"${UI_RGB[accent]}"
-    read -ra z <<<"${UI_RGB[root]}"
-    for ((i = 0; i < n; i++)); do
-        # smoothstep over 0..1000, so both ends blend in without a visible edge
-        t=$(((i + 1) * 1000 / (n + 1)))
-        e=$((t * t * (3000 - 2 * t) / 1000000))
-        r=$((a[0] + (z[0] - a[0]) * e / 1000))
-        g=$((a[1] + (z[1] - a[1]) * e / 1000))
-        b=$((a[2] + (z[2] - a[2]) * e / 1000))
-        case "$UI_DEPTH" in
-            24) HEAD_FADE+=($'\e[0;48;2;'"$r;$g;${b}m ") ;;
-            256) _ui_rgb256 "$r" "$g" "$b"; HEAD_FADE+=($'\e[0;48;5;'"${REPLY}m ") ;;
-            16)
-                local gl=" "
-                if ((e < 250)); then gl="$G_SHADE1"; elif ((e < 500)); then gl="$G_SHADE2"; elif ((e < 750)); then gl="$G_SHADE3"; fi
-                HEAD_FADE+=("$(_ui_fg accent)$(_ui_bg root)${gl}")
-                ;;
-            *) HEAD_FADE+=($'\e[0m ') ;;
-        esac
-    done
-}
-
 ui_glyphs_init() {
     if ((UI_UTF8)); then
         G_H='─' G_V='│' G_TL='┌' G_TR='┐' G_BL='└' G_BR='┘' G_TITLE_L='┤' G_TITLE_R='├'
         G_OK='✔' G_FAIL='✘' G_WARN='!' G_PENDING='○' G_SKIP='–' G_DOT='·' G_BULLET='•'
         G_NEXT='›' G_BACK='‹' G_RADIO_ON='●' G_RADIO_OFF='○' G_CHECK_ON='✔' G_CHECK_OFF=' '
         G_BAR_ON='━' G_BAR_OFF='─' G_ELLIPSIS='…' G_UP='▲' G_DOWN='▼' G_MASK='•'
-        G_HALF_UP='▀' G_HALF_DOWN='▄' G_FULL='█' G_SHADE1='▓' G_SHADE2='▒' G_SHADE3='░'
+        G_HALF_UP='▀' G_HALF_DOWN='▄' G_FULL='█'
         G_SPIN=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
         G_ARROWS='↑↓'
     else
@@ -220,7 +198,7 @@ ui_glyphs_init() {
         G_OK='+' G_FAIL='x' G_WARN='!' G_PENDING='.' G_SKIP='-' G_DOT='-' G_BULLET='*'
         G_NEXT='>' G_BACK='<' G_RADIO_ON='*' G_RADIO_OFF=' ' G_CHECK_ON='x' G_CHECK_OFF=' '
         G_BAR_ON='#' G_BAR_OFF='-' G_ELLIPSIS='~' G_UP='^' G_DOWN='v' G_MASK='*'
-        G_HALF_UP='' G_HALF_DOWN='' G_FULL='#' G_SHADE1='#' G_SHADE2='=' G_SHADE3='-'
+        G_HALF_UP='' G_HALF_DOWN='' G_FULL='#'
         G_SPIN=('|' '/' '-' '\')
         G_ARROWS='Arrows'
     fi

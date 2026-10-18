@@ -8,7 +8,7 @@ src/
   main.sh                 loads the modules in a checkout and calls spartan_main
   modules.list            load order (also used by the build)
   core/                   settings, helpers, log, command line, task runner, plans
-  ui/                     theme, terminal, text layout, drawing, widgets, forms, line mode, progress
+  ui/                     theme, logo, terminal, text layout, drawing, widgets, forms, line mode, progress
   system/                 OS detection, packages, services, preflight, swap, time, network, firewall, SELinux
   stack/                  PHP, ionCube, Composer, Node.js, Nginx, database, Redis, SSL
   app/                    detection, .env, license, release download, options file, preserving
@@ -52,7 +52,7 @@ Use `phase_fail "message"` before returning 1 when the reason is not obvious fro
 
 ## Adding a wizard screen
 
-A screen is a function returning 0 (next) or 1 (back). An optional `<name>_applies` function hides it when it returns 1; the step counter in the header adjusts. Add it to the `wizard_run` call of the flow:
+A screen is a function returning 0 (next) or 1 (back). An optional `<name>_applies` function hides it when it returns 1; the step count on the header's progress bar adjusts. Add it to the `wizard_run` call of the flow:
 
 ```bash
 scr_example() {

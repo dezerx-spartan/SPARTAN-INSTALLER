@@ -8,6 +8,7 @@ core/log.sh
 core/args.sh
 
 ui/theme.sh
+ui/logo.sh
 ui/term.sh
 ui/text.sh
 ui/draw.sh

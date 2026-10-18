@@ -1,7 +1,7 @@
 # shellcheck shell=bash
 # The progress view used while a plan runs: one row per phase with its state
-# and time, the task that is running right now, its latest output line and an
-# overall progress bar.
+# and time, the task that is running right now and its latest output line.
+# The overall progress is the bar in the header (ui_track).
 #
 #   ✔ Preparing the system                                   12s
 #   ⠼ Installing PHP 8.4                                      41s
@@ -9,16 +9,16 @@
 #   ...
 #   Installing PHP extensions · 18s
 #   Setting up php8.4-intl (8.4.13-1) ...
-#   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━──────────────────────  34%
 
 PROG_TITLE=""
 declare -a PROG_IDS=() PROG_LABELS=() PROG_STATE=() PROG_DUR=() PROG_WEIGHT=()
 PROG_CUR=-1
 PROG_PHASE_T0=0
 PROG_NOTICE=""
+PROG_PCT=0
 
 # Geometry of the moving parts (set by _prog_layout)
-PROG_FIRST=0 PROG_VIS=0 PROG_ROW0=0 PROG_TASK_ROW=0 PROG_BAR_ROW=0
+PROG_FIRST=0 PROG_VIS=0 PROG_ROW0=0 PROG_TASK_ROW=0
 
 progress_reset() {
     PROG_TITLE="$1"
@@ -35,6 +35,7 @@ progress_add() {
     PROG_DUR+=("")
 }
 
+# progress_percent - share of the plan's weight that is finished, in PROG_PCT.
 progress_percent() {
     local total=0 done_w=0 i
     for i in "${!PROG_IDS[@]}"; do
@@ -43,14 +44,17 @@ progress_percent() {
             ok | warn | skip | fail) done_w=$((done_w + PROG_WEIGHT[i])) ;;
         esac
     done
-    ((total > 0)) || { echo 0; return; }
-    echo $((done_w * 100 / total))
+    PROG_PCT=0
+    ((total > 0)) && PROG_PCT=$((done_w * 100 / total))
+    return 0
 }
 
 _prog_layout() {
     local n=${#PROG_IDS[@]}
-    ui_layout_dialog $((n + 5)) "$UI_WIDTH"
-    PROG_VIS=$((DLG_IH - 5))
+    # Phases, a blank row and the two task lines. The view has no buttons,
+    # so the task lines take the rows a button row would use.
+    ui_layout_dialog $((n + 1)) "$UI_WIDTH"
+    PROG_VIS=$((DLG_IH - 1))
     ((PROG_VIS > n)) && PROG_VIS=$n
     ((PROG_VIS < 1)) && PROG_VIS=1
     PROG_FIRST=0
@@ -61,7 +65,6 @@ _prog_layout() {
     fi
     PROG_ROW0=$DLG_IR
     PROG_TASK_ROW=$((DLG_IR + PROG_VIS + 1))
-    PROG_BAR_ROW=$((PROG_TASK_ROW + 3))
 }
 
 _prog_phase_row() {
@@ -116,19 +119,6 @@ _prog_task_area() {
     fi
 }
 
-_prog_bar() {
-    local pct w filled bar_on bar_off
-    pct="$(progress_percent)"
-    w=$((DLG_IW - 5))
-    filled=$((w * pct / 100))
-    printf -v bar_on '%*s' "$filled" ''
-    printf -v bar_off '%*s' $((w - filled)) ''
-    fb_text "$PROG_BAR_ROW" "$DLG_IC" "$S_BAR" "${bar_on// /$G_BAR_ON}"
-    fb_text "$PROG_BAR_ROW" $((DLG_IC + filled)) "$S_BAR_BG" "${bar_off// /$G_BAR_OFF}"
-    local p="${pct}%"
-    fb_text "$PROG_BAR_ROW" $((DLG_IC + DLG_IW - ${#p})) "$S_BOLD" "$p"
-}
-
 progress_draw_full() {
     [[ "$UI_MODE" == tui ]] || return 0
     _prog_layout
@@ -139,7 +129,6 @@ progress_draw_full() {
     local i
     for ((i = PROG_FIRST; i < PROG_FIRST + PROG_VIS; i++)); do _prog_phase_row "$i" 0; done
     _prog_task_area
-    _prog_bar
     ui_frame_end
 }
 

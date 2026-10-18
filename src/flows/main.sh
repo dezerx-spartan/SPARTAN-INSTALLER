@@ -63,7 +63,7 @@ main_finish() {
 
 main_interactive() {
     if [[ "$UI_MODE" == tui ]]; then
-        UI_STEP_TEXT=""
+        UI_STEP=""
         ui_busy "Checking this server${G_ELLIPSIS}" startup_checks
     else
         startup_checks
@@ -81,6 +81,12 @@ main_interactive() {
         fi
         choices_restore
         PLAN_EXECUTED=0
+        case "$action" in
+            install) UI_FLOW="Installer" ;;
+            update) UI_FLOW="Updater" ;;
+            uninstall) UI_FLOW="Uninstaller" ;;
+            *) UI_FLOW="Tools" ;;
+        esac
         case "$action" in
             install) flow_install ;;
             update) flow_update ;;

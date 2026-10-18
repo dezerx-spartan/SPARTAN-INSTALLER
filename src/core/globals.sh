@@ -9,6 +9,8 @@
 
 TITLE="DezerX Spartan Installer"
 PRODUCT_LABEL="DezerX Spartan"
+WEBSITE_URL="https://dezerx.com"
+DISCORD_URL="https://discord.dezerx.com"
 
 # ---------------------------------------------------------------------------
 # Files and directories

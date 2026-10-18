@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0-beta.3
+
+### Changed
+
+- New header in place of the blue title bar: the DezerX logo (drawn from the official artwork; ASCII on consoles without UTF-8) with the name, version, website and Discord link beside it, and a progress bar that follows the wizard steps, then the installation or update, and ends green or red.
+- A tab above each dialog shows which part of the installer it belongs to: Installer, Updater, Uninstaller or Tools.
+- The progress view drops its own bar (the header shows the progress) and is two rows shorter, so more steps fit on small terminals.
+
 ## 2.0.0-beta.2
 
 ### Fixed
