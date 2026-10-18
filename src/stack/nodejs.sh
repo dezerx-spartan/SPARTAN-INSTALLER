@@ -29,5 +29,22 @@ install_nodejs() {
         phase_fail "Node.js ${major:-is missing}; the frontend build needs Node.js ${NODE_MIN_MAJOR} or newer."
         return 1
     fi
-    say "Node.js $(node -v), npm $(npm -v 2>/dev/null)"
+    task "Installing pnpm ${PNPM_MAJOR}" install_pnpm || {
+        phase_fail "pnpm could not be installed; the frontend build needs it."
+        return 1
+    }
+    say "Node.js $(node -v), pnpm $(pnpm -v 2>/dev/null)"
+}
+
+install_pnpm() {
+    local cur
+    cur="$(pnpm -v 2>/dev/null || true)"
+    if [[ "${cur%%.*}" == "$PNPM_MAJOR" ]]; then
+        echo "pnpm ${cur} is installed."
+        return 0
+    fi
+    npm install -g --force "pnpm@${PNPM_MAJOR}" --no-audit --no-fund || return 1
+    hash -r
+    have pnpm || return 1
+    echo "pnpm $(pnpm -v)"
 }

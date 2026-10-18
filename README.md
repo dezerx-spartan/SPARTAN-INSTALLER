@@ -1,6 +1,6 @@
 # DezerX Spartan Installer
 
-Installs, updates and maintains [DezerX Spartan](https://market.dezerx.com) on a Linux server: PHP with ionCube, Nginx, MariaDB or MySQL, Redis, Node.js, Laravel Octane, queue workers, the scheduler and SSL.
+Installs, updates and maintains [DezerX Spartan](https://market.dezerx.com) on a Linux server: PHP with ionCube, Nginx, MariaDB or MySQL, Valkey, Node.js with pnpm, Laravel Octane, queue workers, the scheduler and SSL.
 
 Version 2 replaces the whiptail dialogs of 1.x with a full-screen interface, adds automatic rollback for updates and fixes a long list of 1.x problems (see [CHANGELOG.md](CHANGELOG.md)). Paths, service names, `.env` keys, `script_options.json` and every 1.x command line flag stay the same, so existing servers update in place.
 
@@ -39,7 +39,7 @@ sudo bash spartan_installer.sh --non-interactive --update --app-dir /var/www/spa
 
 Spartan's built-in automatic updater (`php artisan app:update`) runs exactly this kind of command; it keeps working unchanged.
 
-An update puts the site into maintenance mode, backs up the files, the database and the server configuration to `/var/backups/spartan`, installs the new release, upgrades PHP, Redis and Node.js, migrates and builds. If any step fails after the old version was removed, everything is restored from the backup automatically and the site comes back online.
+An update puts the site into maintenance mode, backs up the files, the database and the server configuration to `/var/backups/spartan`, installs the new release, upgrades PHP, Valkey and Node.js, migrates and builds with pnpm. Servers that still run Redis are switched to Valkey with their data. If any step fails after the old version was removed, everything is restored from the backup automatically and the site comes back online.
 
 What is kept is controlled by `script_options.json` in the application folder (same format as 1.x):
 

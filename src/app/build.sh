@@ -17,15 +17,33 @@ app_composer_install() {
     composer_run install --no-dev --optimize-autoloader --prefer-dist --no-progress
 }
 
-app_npm_install() {
-    if [[ -f "${APP_DIR}/package-lock.json" ]]; then
-        (cd "$APP_DIR" && npm ci --no-audit --no-fund)
-    elif [[ -f "${APP_DIR}/package.json" ]]; then
-        (cd "$APP_DIR" && npm install --no-audit --no-fund)
-    fi
+PNPM_FLAGS=(--config.node-linker=hoisted --config.confirm-modules-purge=false
+    --config.dangerously-allow-all-builds=true --config.update-notifier=false)
+
+app_pnpm_install() {
+    [[ -f "${APP_DIR}/package.json" ]] || return 0
+    (
+        cd "$APP_DIR" || exit 1
+        if [[ -d node_modules && ! -f node_modules/.modules.yaml ]]; then
+            echo "Removing node_modules installed by npm"
+            rm -rf node_modules
+        fi
+        if [[ ! -f pnpm-lock.yaml && -f package-lock.json ]]; then
+            pnpm import "${PNPM_FLAGS[@]}" || rm -f pnpm-lock.yaml
+        fi
+        if [[ -f pnpm-lock.yaml ]]; then
+            if pnpm install --frozen-lockfile "${PNPM_FLAGS[@]}"; then
+                pnpm store prune >/dev/null 2>&1 || true
+                exit 0
+            fi
+            echo "The lockfile does not match package.json; resolving again."
+        fi
+        pnpm install --no-frozen-lockfile "${PNPM_FLAGS[@]}" || exit 1
+        pnpm store prune >/dev/null 2>&1 || true
+    )
 }
 
-app_npm_build() {
+app_pnpm_build() {
     [[ -f "${APP_DIR}/package.json" ]] || return 0
     local ram swap total target=4096 overhead=512
     ram="$(mem_total_mb)"
@@ -45,7 +63,7 @@ app_npm_build() {
     ((heap > 8192)) && heap=8192
     echo "NODE_OPTIONS=--max-old-space-size=${heap}"
     local rc=0
-    (cd "$APP_DIR" && NODE_OPTIONS="--max-old-space-size=${heap}" npm run build) || rc=$?
+    (cd "$APP_DIR" && NODE_OPTIONS="--max-old-space-size=${heap}" pnpm run build) || rc=$?
     swap_temp_off
     return "$rc"
 }

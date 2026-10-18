@@ -5,7 +5,7 @@ scr_install_welcome() {
     text="Welcome to the DezerX Spartan installer.
 
 This installer will:
-  - Install PHP ${PHP_VER} with ionCube, Nginx, MariaDB or MySQL, Redis and Node.js
+  - Install PHP ${PHP_VER} with ionCube, Nginx, MariaDB or MySQL, $(kv_target_name) and Node.js
   - Download DezerX Spartan with your license key
   - Set up Octane, queue workers and the scheduler
   - Secure your domain with a free Let's Encrypt certificate
@@ -322,7 +322,7 @@ install_review_text() {
     t+="  {d}License      {/}${PRODUCT_NAME} ($(license_masked))\n"
     t+="  {d}Location     {/}$(tx "$APP_DIR")\n"
     t+="  {d}Database     {/}$(tx "$db")\n"
-    t+="  {d}Stack        {/}PHP ${PHP_VER}, ionCube, Nginx, Redis, Node.js LTS\n"
+    t+="  {d}Stack        {/}PHP ${PHP_VER}, ionCube, Nginx, $(kv_target_name), Node.js LTS\n"
     t+="  {d}Performance  {/}${octane}\n"
     t+="  {d}SSL          {/}${ssl}\n"
     t+="\nThe installer will also:\n"
@@ -416,7 +416,7 @@ ph_database() {
     }
 }
 
-ph_redis() { task "Installing Redis" install_redis; }
+ph_redis() { task "Installing $(kv_target_name)" install_valkey; }
 
 ph_app() {
     detect_web_user_group
@@ -426,8 +426,8 @@ ph_app() {
     task "Writing the .env file" app_env_setup || return 1
     task "Choosing cache and queue drivers" configure_cache_queue_drivers || return 1
     task "Installing PHP dependencies (Composer)" app_composer_install || return 1
-    task "Installing frontend dependencies (npm)" app_npm_install || return 1
-    task "Building the dashboard" app_npm_build || return 1
+    task "Installing frontend dependencies (pnpm)" app_pnpm_install || return 1
+    task "Building the dashboard" app_pnpm_build || return 1
     task "Entering maintenance mode" app_maintenance_on || true
     if [[ -n "$PRESERVED_APP_KEY" ]]; then
         env_write_value APP_KEY "$PRESERVED_APP_KEY"
@@ -474,7 +474,7 @@ install_plan() {
     plan_add web "Installing Nginx" 5 ph_webserver
     plan_add node "Installing Node.js" 5 ph_node
     plan_add db "Setting up the database" 7 ph_database
-    plan_add redis "Installing Redis" 3 ph_redis
+    plan_add redis "Installing $(kv_target_name)" 3 ph_redis
     plan_add app "Building DezerX Spartan" 30 ph_app
     plan_add services "Configuring services" 8 ph_services
     plan_add ssl "Securing with SSL" 5 ph_ssl

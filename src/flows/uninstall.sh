@@ -120,7 +120,7 @@ uninstall_run() {
         summary_add "DezerX Spartan was removed from $(tx "$APP_DIR")."
         ((RM_FINAL_BACKUP)) && summary_kv "Backup" "${APP_BACKUP_FILE}"
         ((RM_DATABASE)) || summary_add "\nThe database ${DB_NAME} was kept."
-        summary_add "PHP, Nginx, the database server and Redis are still installed."
+        summary_add "PHP, Nginx, the database server and $(kv_name) are still installed."
         summary_show
         return 0
     fi

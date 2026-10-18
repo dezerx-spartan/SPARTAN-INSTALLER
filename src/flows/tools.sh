@@ -5,7 +5,7 @@ flow_tools() {
         ui_menu "Tools" "Maintenance tools for an existing installation." "perms" \
             perms "Repair permissions" "Ownership, file modes and the PHP-FPM user" \
             ssl "SSL certificate" "Issue or replace the certificate for the site" \
-            restart "Restart services" "PHP-FPM, Nginx, Octane, queue workers, Redis" \
+            restart "Restart services" "PHP-FPM, Nginx, Octane, queue workers, Valkey" \
             health "Health check" "Services, database, website and certificate" \
             bundle "Support bundle" "Collect redacted logs for DezerX support"
         local rc=$?
@@ -105,7 +105,7 @@ tr_run() {
     task "Restarting queue workers" restart_queue_workers
     local r
     r="$(redis_service_name)"
-    svc_exists "$r" && task "Restarting Redis" systemctl restart "$r"
+    svc_exists "$r" && task "Restarting $(kv_name)" systemctl restart "$r"
     return 0
 }
 
@@ -160,7 +160,7 @@ health_collect() {
     if crontab -l 2>/dev/null | grep -qE "$(cron_match_regex)"; then _health_row ok "Scheduler" "cron entry present"; else _health_row fail "Scheduler" "no cron entry for ${APP_DIR}"; fi
     if db_check_connection 2>/dev/null; then _health_row ok "Database" "${DB_NAME} reachable"; else _health_row fail "Database" "cannot connect as ${DB_USER}"; fi
     if [[ "$(env_read_value CACHE_STORE)" == redis ]]; then
-        if redis_is_up; then _health_row ok "Redis" "answering"; else _health_row fail "Redis" "cache uses Redis but it does not answer"; fi
+        if redis_is_up; then _health_row ok "$(kv_name)" "answering"; else _health_row fail "$(kv_name)" "cache uses $(kv_name) but it does not answer"; fi
     fi
     local out
     if out="$(smoke_test 2>&1)"; then _health_row ok "Website" "$(tail -n1 <<<"$out")"; else _health_row fail "Website" "$(tail -n1 <<<"$out")"; fi

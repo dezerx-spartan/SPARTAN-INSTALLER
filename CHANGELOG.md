@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.0-beta.9
+
+### Changed
+
+- Valkey replaces Redis. New installs get Valkey (Debian 12 from bookworm-backports); Ubuntu 22.04 has no Valkey package and keeps Redis.
+- Updates switch a local Redis to Valkey: the queue workers stop, Redis saves a snapshot, Valkey loads it, the password is carried over and the redis-server package is removed (its data stays in /var/lib/redis). When Valkey cannot read the snapshot (Redis 8 on Debian 13), the keys are copied one by one through a temporary Redis. External Redis servers are left as they are.
+- The frontend is installed and built with pnpm 10 instead of npm (npm-style hoisted node_modules; an existing package-lock.json is imported so the versions stay the same).
+
 ## 2.0.0-beta.8
 
 ### Changed

@@ -155,7 +155,7 @@ up_components() {
     task "Updating the PHP repository" php_enable_repo || return 1
     task "Updating PHP ${PHP_VER} and extensions" php_install_packages || return 1
     php_octane_requirements >/dev/null || true
-    task "Updating Redis" install_redis || true
+    task "Setting up $(kv_target_name)" install_valkey || true
     task_try "Tuning the database" config_db_tuning
     install_nodejs || return 1
     install_ioncube || return 1
@@ -167,15 +167,15 @@ up_components() {
 
 up_app() {
     task "Installing PHP dependencies (Composer)" app_composer_install || return 1
-    task "Installing frontend dependencies (npm)" app_npm_install || return 1
+    task "Installing frontend dependencies (pnpm)" app_pnpm_install || return 1
     task "Running database migrations" artisan migrate --force || return 1
     task "Seeding the database" artisan db:seed --force || return 1
     task "Linking storage" app_storage_link || true
     if [[ "$css_save_methode" == php ]]; then
         task "Restoring dashboard colours" app_theme_restore || warn_add "The saved dashboard colours could not be restored."
     fi
-    task "Building the dashboard" app_npm_build || return 1
-    task "Moving cache and queue to Redis" switch_to_redis_drivers || true
+    task "Building the dashboard" app_pnpm_build || return 1
+    task "Moving cache and queue to $(kv_name)" switch_to_redis_drivers || true
     task "Applying deletions from ${OPTIONS_JSON_NAME}" opts_apply_deletions || true
 }
 
@@ -243,7 +243,7 @@ update_plan() {
     plan_add backup "Creating backups" 10 up_backup
     plan_add download "Downloading DezerX Spartan${AVAILABLE_VERSION:+ ${AVAILABLE_VERSION}}" 6 up_download
     plan_add deploy "Installing the new version" 8 up_deploy
-    plan_add components "Upgrading PHP, Redis and Node.js" 14 up_components
+    plan_add components "Upgrading PHP, $(kv_target_name) and Node.js" 14 up_components
     plan_add app "Migrating and building" 34 up_app
     plan_add services "Configuring services" 10 up_services
     plan_add finish "Finishing up" 10 up_finish

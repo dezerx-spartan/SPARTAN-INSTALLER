@@ -19,9 +19,9 @@ demo_ph_php() { demo_t "Adding the PHP repository" 1 && demo_t "Installing PHP 8
 demo_ph_web() { demo_t "Installing Nginx" 2; }
 demo_ph_node() { demo_t "Adding the NodeSource LTS repository" 1 && demo_t "Installing Node.js" 2; }
 demo_ph_db() { demo_t "Installing the database server" 2 && demo_t "Creating database dezerx and user dezer" 1; }
-demo_ph_redis() { demo_t "Installing Redis" 1; }
+demo_ph_redis() { demo_t "Installing Valkey" 1; }
 demo_ph_app() {
-    demo_t "Installing PHP dependencies (Composer)" 2 && demo_t "Installing frontend dependencies (npm)" 3 &&
+    demo_t "Installing PHP dependencies (Composer)" 2 && demo_t "Installing frontend dependencies (pnpm)" 3 &&
         demo_t "Building the dashboard" 4 && demo_t "Creating the database tables" 2
 }
 demo_ph_services() { demo_t "Creating the Octane service" 1 && demo_t "Starting 4 queue worker(s)" 1 && demo_t "Configuring the Nginx site" 1; }
@@ -79,7 +79,7 @@ demo_overrides() {
         plan_add web "Installing Nginx" 5 demo_ph_web
         plan_add node "Installing Node.js" 5 demo_ph_node
         plan_add db "Setting up the database" 7 demo_ph_db
-        plan_add redis "Installing Redis" 3 demo_ph_redis
+        plan_add redis "Installing Valkey" 3 demo_ph_redis
         plan_add app "Building DezerX Spartan" 30 demo_ph_app
         plan_add services "Configuring services" 8 demo_ph_services
         plan_add ssl "Securing with SSL" 5 demo_ph_ssl

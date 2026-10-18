@@ -232,7 +232,7 @@ Actions:
   --setup-perms             Repair file ownership and permissions
   --ssl                     Issue a Let's Encrypt certificate for an installation
   --health                  Check services, database, HTTP and certificate
-  --restart-services        Restart PHP-FPM, Nginx, Octane, queue workers and Redis
+  --restart-services        Restart PHP-FPM, Nginx, Octane, queue workers and Valkey
   --support-bundle          Write a redacted diagnostics archive (alias: --upload-logs)
 
 General:

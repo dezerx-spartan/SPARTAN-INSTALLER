@@ -175,3 +175,14 @@ install_essentials() {
     ((${#pkgs[@]})) || { echo "All required tools are present."; return 0; }
     pkg_install "${pkgs[@]}"
 }
+
+pkg_remove() {
+    (($#)) || return 0
+    if is_debian_family; then
+        apt_get remove "$@"
+    elif have dnf; then
+        dnf -y remove "$@"
+    else
+        yum -y remove "$@"
+    fi
+}

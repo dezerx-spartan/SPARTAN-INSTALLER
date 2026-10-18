@@ -31,6 +31,7 @@ PHP_VER="8.4"
 PHP_MIN_VER="8.2"
 PHP_IONCUBE_MAX="8.4"
 NODE_MIN_MAJOR=20
+PNPM_MAJOR=10
 
 PHP_PPA_URL="https://ppa.launchpadcontent.net/ondrej/php/ubuntu"
 SURY_PHP_URL="https://packages.sury.org/php"
