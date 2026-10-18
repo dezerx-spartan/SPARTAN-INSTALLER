@@ -1,27 +1,10 @@
-# shellcheck shell=bash
-# Screen composition. Every frame is built in FB and written in one go so the
-# screen never flickers, even over slow SSH links.
-#
-#   ┌ header  █▀▀▀▄ ▄▀▀  DezerX Spartan  Installer 2.0.0                        ┐
-#   │         █   ▀▄▀    Website  https://dezerx.com                            │
-#   │         █   ▄▀▄    Discord  https://discord.dezerx.com                    │
-#   │         █▄▄▄▀ ▀▄▄  ▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄  Step 2 of 7  │
-#   │                                                                              │
-#   │          INSTALLER                                                          │
-#   │         ┌─────────────────────┤ Title ├─────────────────────┐              │
-#   │         │ dialog                                             │▌             │
-#   │         └────────────────────────────────────────────────────┘▌             │
-#   │          ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀              │
-#   └ footer ─ key hints ──────────────────────────────────────────────────────────┘
-
 FB=""
-UI_STEP=""      # "2/7" while a wizard runs (wizard_run)
-UI_FLOW=""      # Installer, Updater, ...: the tab above the dialogs
+UI_STEP=""
+UI_FLOW=""
 UI_HINTS=""
 UI_BASE_KEY=""
 UI_DANGER=0
 
-# Dialog geometry (set by ui_layout_dialog)
 DLG_R=0 DLG_C=0 DLG_H=0 DLG_W=0
 DLG_IR=0 DLG_IC=0 DLG_IW=0 DLG_IH=0
 HEADER_H=1 HEADER_LOGO=0 HEADER_TOP=1
@@ -32,10 +15,8 @@ fb_flush() {
     FB=""
 }
 
-# fb_text <row> <col> <style> <text>
 fb_text() { FB+=$'\e['"$1;$2H$3$4"; }
 
-# fb_rect <row> <col> <height> <width> <style> - solid area.
 fb_rect() {
     local r="$1" c="$2" h="$3" w="$4" st="$5" line i
     ((h > 0 && w > 0)) || return 0
@@ -45,7 +26,6 @@ fb_rect() {
     done
 }
 
-# fb_hline <row> <col> <width> <style> <char>
 fb_hline() {
     local line
     ((${3} > 0)) || return 0
@@ -53,12 +33,6 @@ fb_hline() {
     FB+=$'\e['"$1;$2H$4${line// /$5}"
 }
 
-# The header shrinks with the terminal so the dialogs keep the room they need
-# (the tallest form is 17 rows):
-#   34+ rows  5-row logo with a blank row above and below
-#   28+ rows  4-row logo with a blank row above
-#   24+ rows  4-row logo
-#   smaller   a single line
 ui_header_height() {
     HEADER_TOP=1
     if ((TERM_ROWS >= 34)); then
@@ -72,10 +46,6 @@ ui_header_height() {
     fi
 }
 
-# ui_track - what the progress bar in the header shows: the wizard step,
-# then the plan. Sets TRACK_PCT (0-100), TRACK_LABEL and TRACK_STATE (run,
-# ok or fail); returns 1 when there is nothing to track (menus, tools
-# without a plan).
 TRACK_PCT=0 TRACK_LABEL="" TRACK_STATE=""
 ui_track() {
     TRACK_PCT=0 TRACK_LABEL="" TRACK_STATE="run"
@@ -100,9 +70,6 @@ ui_track() {
     return 0
 }
 
-# ui_track_gradient <cells> - TRACK_GRAD[i]: foregrounds running from deep
-# blue to the light blue of the X in the logo, so the filled part of the bar
-# brightens towards its leading edge (24-bit and 256 colours).
 declare -a TRACK_GRAD=()
 TRACK_GRAD_KEY=""
 ui_track_gradient() {
@@ -125,8 +92,6 @@ ui_track_gradient() {
     done
 }
 
-# _ui_draw_track <row> <col> <width> - the bar, then its label. The label has
-# a fixed slot so the bar keeps its length from step to step.
 _ui_draw_track() {
     local row="$1" col="$2" w="$3" slot=14 bw fill i cells="" rest
     [[ -n "$TRACK_STATE" ]] || return 0
@@ -138,7 +103,6 @@ _ui_draw_track() {
         ok) on="$S_TRACK_OK" lst="$S_TRACK_OK" ;;
         fail) on="$S_TRACK_ERR" lst="$S_TRACK_ERR" ;;
     esac
-    # A half-height bar where colours tell its parts apart; otherwise glyphs.
     if ((!UI_UTF8 || UI_DEPTH == 0)); then
         g_on="$G_BAR_ON" g_off="$G_BAR_OFF"
     fi
@@ -155,27 +119,21 @@ _ui_draw_track() {
     fb_text "$row" $((col + bw + 2)) "$lst" "$TEXT_OUT"
 }
 
-# _ui_header_link <row> <col> <width> <label> <url>
 _ui_header_link() {
     fb_text "$1" "$2" "$S_HDR_MUTED" "$4"
     text_trunc "$5" $(($3 - 9))
     fb_text "$1" $(($2 + 9)) "$S_HDR_LINK" "$TEXT_OUT"
 }
 
-# The header: the DezerX mark with the name, the links and the progress bar
-# beside it, lined up with a standard dialog below.
 ui_draw_header() {
     ui_header_height
     local w=$UI_WIDTH left right
     ((w > TERM_COLS - 4)) && w=$((TERM_COLS - 4))
-    # The columns of a standard dialog's border.
     left=$(((TERM_COLS - w) / 2 + 2))
     right=$((left + w - 3))
     fb_rect 1 1 "$HEADER_H" "$TERM_COLS" "$S_ROOT"
 
     if ((HEADER_LOGO == 0)); then
-        # One line: the mark as text, the name, then the progress bar or,
-        # when nothing runs, the links.
         local col=$((left + 4 + ${#PRODUCT_LABEL} + 2))
         local room=$((right - col + 1))
         fb_text 1 "$left" "$S_BRAND" "D"
@@ -191,7 +149,6 @@ ui_draw_header() {
         return 0
     fi
 
-    # Sit directly above the dialog (and its tab), three blank rows between.
     local top=$((DLG_R - HEADER_LOGO - 4 - (${#UI_FLOW} > 0 ? 1 : 0))) i
     ((top < HEADER_TOP)) && top=$HEADER_TOP
     logo_render "$HEADER_LOGO"
@@ -220,16 +177,12 @@ ui_draw_footer() {
     fb_text "$TERM_ROWS" 1 "$S_FOOT" "$TEXT_OUT"
 }
 
-# Background, header and footer. Rebuilt when the terminal size, progress
-# or hints change; otherwise reused between key presses.
 ui_draw_base() {
     fb_rect 1 1 "$TERM_ROWS" "$TERM_COLS" "$S_ROOT"
     ui_draw_header
     ui_draw_footer
 }
 
-# ui_layout_dialog <content rows> [preferred width] - centres a dialog in the
-# body area. Content rows exclude the border, padding and button row.
 ui_layout_dialog() {
     local content_h="$1" want_w="${2:-72}"
     ui_header_height
@@ -238,14 +191,12 @@ ui_layout_dialog() {
     ((want_w > max_w)) && want_w=$max_w
     ((want_w < 30)) && want_w=30
     DLG_W=$want_w
-    # border + blank + content + blank + buttons + blank + border
     DLG_H=$((content_h + 6))
     local max_h=$((body_h - 2))
     ((DLG_H > max_h)) && DLG_H=$max_h
     ((DLG_H < 7)) && DLG_H=7
     DLG_R=$((body_top + (body_h - DLG_H) / 2))
     DLG_C=$(((TERM_COLS - DLG_W) / 2 + 1))
-    # Nudge the dialog up a little, like a window manager would.
     ((DLG_R > body_top + 1 && body_h - DLG_H > 6)) && DLG_R=$((DLG_R - 1))
     DLG_IR=$((DLG_R + 2))
     DLG_IC=$((DLG_C + 4))
@@ -253,7 +204,6 @@ ui_layout_dialog() {
     DLG_IH=$((DLG_H - 6))
 }
 
-# ui_draw_box <title> - panel, border, title and shadow at the current layout.
 ui_draw_box() {
     local title="$1" border="$S_BORDER" title_style="$S_TITLE"
     if ((UI_DANGER)); then
@@ -262,7 +212,6 @@ ui_draw_box() {
     fi
     local r=$DLG_R c=$DLG_C h=$DLG_H w=$DLG_W i
 
-    # The flow the dialog belongs to, as a tab above its top left corner.
     if ((r - 1 > HEADER_H)); then
         fb_rect $((r - 1)) "$c" 1 "$w" "$S_ROOT"
         if [[ -n "$UI_FLOW" ]]; then
@@ -272,7 +221,6 @@ ui_draw_box() {
         fi
     fi
 
-    # Shadow: half-height strip below, one column on the right.
     if ((UI_DEPTH != 0 && UI_DEPTH != 16)); then
         if ((UI_UTF8)); then
             fb_text "$r" $((c + w)) "$S_SHADE" "$G_HALF_DOWN"
@@ -286,7 +234,6 @@ ui_draw_box() {
 
     fb_rect "$r" "$c" "$h" "$w" "$S_PANEL"
 
-    # Border sits one column inside the panel edge.
     local bw=$((w - 2)) inner
     printf -v inner '%*s' $((bw - 2)) ''
     inner="${inner// /$G_H}"
@@ -307,7 +254,6 @@ ui_draw_box() {
     fi
 }
 
-# ui_draw_lines <row> <first index> <count> - draws WRAP_LINES inside the dialog.
 ui_draw_lines() {
     local row="$1" first="$2" count="$3" i
     for ((i = 0; i < count; i++)); do
@@ -318,7 +264,6 @@ ui_draw_lines() {
     done
 }
 
-# ui_draw_buttons <row> <active index> <label>... - centred button row.
 ui_draw_buttons() {
     local row="$1" active="$2"
     shift 2
@@ -335,15 +280,12 @@ ui_draw_buttons() {
     done
 }
 
-# ui_draw_scrollmarks <row top> <row bottom> <can up> <can down>
 ui_draw_scrollmarks() {
     local col=$((DLG_C + DLG_W - 3))
     (($3)) && fb_text "$1" "$col" "$S_ACCENT" "$G_UP"
     (($4)) && fb_text "$2" "$col" "$S_ACCENT" "$G_DOWN"
 }
 
-# Full repaint of base + dialog happens through ui_frame_begin/ui_frame_end so
-# widgets only describe their own content.
 ui_frame_begin() {
     ui_track || true
     local key="${TERM_ROWS}x${TERM_COLS}|${TRACK_STATE}:${TRACK_PCT}:${TRACK_LABEL}|${UI_HINTS}|${DLG_R},${DLG_C},${DLG_H},${DLG_W}"

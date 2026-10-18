@@ -1,10 +1,3 @@
-# shellcheck shell=bash
-# SSL: Let's Encrypt through the webroot, or a self-signed certificate.
-#
-# Fixes over 1.x: when Let's Encrypt fails the site stays on working HTTP
-# (1.x wrote an HTTPS vhost pointing at missing files and Nginx went down),
-# and renewals reload Nginx so a renewed certificate is actually served.
-
 install_certbot_pkgs() {
     have certbot && return 0
     if is_debian_family; then
@@ -31,7 +24,6 @@ certbot_renewal_hook() {
     mkdir -p "$(dirname "$CERTBOT_DEPLOY_HOOK")"
     cat >"$CERTBOT_DEPLOY_HOOK" <<'EOF'
 #!/bin/sh
-# Installed by the DezerX Spartan installer: serve renewed certificates.
 nginx -t >/dev/null 2>&1 && systemctl reload nginx
 EOF
     chmod 755 "$CERTBOT_DEPLOY_HOOK"
@@ -61,7 +53,6 @@ create_self_signed_certs() {
     echo "Self-signed certificate created in ${dir}"
 }
 
-# flip_app_url_to_https - APP_URL to https and Octane told about TLS.
 flip_app_url_to_https() {
     [[ -f "${APP_DIR}/.env" ]] || return 0
     env_write_value APP_URL "https://${DOMAIN}"
@@ -69,8 +60,6 @@ flip_app_url_to_https() {
     return 0
 }
 
-# ssl_apply - runs the chosen SSL mode for a fresh install or the SSL tool.
-# Returns 3 when SSL was skipped on purpose.
 ssl_apply() {
     case "${SSL_MODE:-later}" in
         install)

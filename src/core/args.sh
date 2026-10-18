@@ -1,7 +1,3 @@
-# shellcheck shell=bash
-# Command line flags. Every 1.x flag is still accepted with the same meaning;
-# the 1.x one-liners (and Spartan's own auto-updater) depend on them.
-
 declare -a ARG_WARNINGS=()
 SPARTAN_ARGS_TEXT=""
 
@@ -11,7 +7,6 @@ arg_error() {
     return 1
 }
 
-# swap_size_to_mb <value> - "2048", "2048M", "2G" -> MB. Plain numbers are megabytes.
 swap_size_to_mb() {
     local v="${1,,}"
     case "$v" in

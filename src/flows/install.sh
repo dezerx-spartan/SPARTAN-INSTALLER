@@ -1,11 +1,4 @@
-# shellcheck shell=bash
-# Fresh installation: wizard screens, validation and the install plan.
-
 INSTALL_EXISTING_SPARTAN=0
-
-# ---------------------------------------------------------------------------
-# Screens
-# ---------------------------------------------------------------------------
 
 scr_install_welcome() {
     local text
@@ -179,7 +172,6 @@ _validate_root_pw() {
 }
 
 _db_remote_check() {
-    # Without a client yet, the connection is tested during the installation.
     have mysql || have mariadb || return 0
     if ! ui_busy "Connecting to ${DB_HOST}:${DB_PORT}${G_ELLIPSIS}" db_check_connection; then
         ui_error "Database" "Could not connect to {b}$(tx "${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}"){/}.\n\nFor a remote database server the database and user must already exist and accept connections from this server." "${G_BACK} Back"
@@ -191,7 +183,7 @@ scr_install_database() {
     while :; do
         local text="Database connection for DezerX Spartan. Leave the password empty to generate a strong one."
         if [[ -n "$EXISTING_DB_SERVER" ]]; then
-            text="{ok}${G_OK}{/} $(db_server_label) is installed and will be used.\n\n${text}"
+            text="$(db_server_label) is installed and will be used.\n\n${text}"
         fi
         form_reset
         form_add "Host" "$DB_HOST" text "127.0.0.1 installs and configures a local server"
@@ -357,10 +349,6 @@ scr_install_review() {
     ui_nav "Review" "$(install_review_text)" "Install ${G_NEXT}"
 }
 
-# ---------------------------------------------------------------------------
-# Plan
-# ---------------------------------------------------------------------------
-
 ph_prepare() {
     task "Refreshing package lists" pkg_refresh || return 1
     if ((!SKIP_UPGRADE)); then
@@ -383,7 +371,6 @@ install_prepare_dir() {
             phase_fail "${APP_DIR} is not empty and does not contain DezerX Spartan."
             return 1
         }
-        # The database is kept, so the encryption key that goes with it is too.
         PRESERVED_APP_KEY="$(env_read_value APP_KEY)"
         secret_add "$PRESERVED_APP_KEY"
         backup_prepare_dir || return 1
@@ -499,7 +486,7 @@ install_summary() {
     [[ "$SSL_RESULT" == ok ]] && scheme="https"
     local url="${scheme}://${DOMAIN}"
     summary_reset "Installation complete" 1
-    summary_add "{ok}${G_OK}{/} DezerX Spartan is installed and running."
+    summary_add "DezerX Spartan is installed and running."
     summary_add ""
     summary_kv "Dashboard" "$url"
     summary_kv "Location" "$APP_DIR"
@@ -541,10 +528,6 @@ install_run() {
     summary_show
     return 1
 }
-
-# ---------------------------------------------------------------------------
-# Entry points
-# ---------------------------------------------------------------------------
 
 flow_install() {
     [[ -n "$APP_DIR" ]] || APP_DIR="$APP_DEFAULT_DIR"

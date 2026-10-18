@@ -1,6 +1,3 @@
-# shellcheck shell=bash
-# Small helpers with no side effects on the system.
-
 have() { command -v "$1" >/dev/null 2>&1; }
 
 is_true() {
@@ -14,7 +11,6 @@ is_uint() { [[ "$1" =~ ^[0-9]+$ ]]; }
 
 now() { printf '%(%s)T' -1; }
 
-# trim <string> - strips leading and trailing whitespace.
 trim() {
     local s="$1"
     s="${s#"${s%%[![:space:]]*}"}"
@@ -41,14 +37,12 @@ fmt_bytes() {
     }'
 }
 
-# version_ge A B - true when version A >= version B.
 version_ge() {
     [[ "$(printf '%s\n%s\n' "$2" "$1" | sort -V | head -n1)" == "$2" ]]
 }
 
 version_gt() { [[ "$1" != "$2" ]] && version_ge "$1" "$2"; }
 
-# major.minor of a version string ("8.4.13" -> "8.4").
 version_minor() {
     local v="$1"
     [[ "$v" =~ ^([0-9]+)\.([0-9]+) ]] && printf '%s.%s' "${BASH_REMATCH[1]}" "${BASH_REMATCH[2]}"
@@ -65,11 +59,6 @@ random_password() {
     printf '%s' "$p"
 }
 
-# ---------------------------------------------------------------------------
-# Validation
-# ---------------------------------------------------------------------------
-
-# domain_normalize <input> - lowercase host without scheme, path, port or trailing dot.
 domain_normalize() {
     local d
     d="$(trim "$1")"
@@ -99,8 +88,6 @@ port_valid() { is_uint "$1" && (($1 >= 1 && $1 <= 65535)); }
 
 email_valid() { [[ "$1" =~ ^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$ ]]; }
 
-# path_is_protected <path> - true for system paths that must never be used as,
-# or wiped as, an application directory.
 path_is_protected() {
     local p="$1"
     [[ -n "$p" ]] || return 0
@@ -125,7 +112,6 @@ path_is_protected() {
     return 1
 }
 
-# safe_rm_rf <path>... - rm -rf that refuses protected paths.
 safe_rm_rf() {
     local p
     for p in "$@"; do
@@ -138,20 +124,14 @@ safe_rm_rf() {
     done
 }
 
-# dir_is_empty <dir> - true when the directory is missing or has no entries.
 dir_is_empty() {
     [[ -d "$1" ]] || return 0
     [[ -z "$(find "$1" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]]
 }
 
-# ---------------------------------------------------------------------------
-# Resources
-# ---------------------------------------------------------------------------
-
 mem_total_mb() { awk '/^MemTotal:/ { printf "%d", $2 / 1024 }' /proc/meminfo 2>/dev/null || echo 1024; }
 swap_total_mb() { awk '/^SwapTotal:/ { printf "%d", $2 / 1024 }' /proc/meminfo 2>/dev/null || echo 0; }
 
-# free_mb <path> - free space on the filesystem holding <path> (or its nearest existing parent).
 free_mb() {
     local p="$1"
     while [[ ! -e "$p" && "$p" != "/" ]]; do p="$(dirname "$p")"; done
@@ -170,10 +150,6 @@ in_container() {
     grep -qa 'container=' /proc/1/environ 2>/dev/null
 }
 
-# ---------------------------------------------------------------------------
-# Temporary files owned by this run (removed on exit)
-# ---------------------------------------------------------------------------
-
 cleanup_add() { CLEANUP_PATHS+=("$@"); }
 
 cleanup_run() {
@@ -188,21 +164,12 @@ cleanup_run() {
     CLEANUP_PATHS=()
 }
 
-# work_dir <name> - creates a private directory (removed when the run ends).
-# The path is returned in REPLY so the cleanup registration is not lost in a
-# command substitution subshell.
 work_dir() {
     REPLY="$(mktemp -d "${WORK_BASE}/spartan-${1:-work}.XXXXXX")" || return 1
     chmod 700 "$REPLY"
     cleanup_add "$REPLY"
 }
 
-# ---------------------------------------------------------------------------
-# JSON. jq is used when installed; before the essentials are installed the
-# license API answers are read with python3, php or a small fallback parser.
-# ---------------------------------------------------------------------------
-
-# json_get <file> <path> - prints a scalar at a dotted path such as .data.download_url
 json_get() {
     local file="$1" path="$2"
     [[ -s "$file" ]] || return 1
@@ -246,10 +213,6 @@ echo is_bool($v) ? ($v ? "true" : "false") : (is_scalar($v) ? $v : json_encode($
     fi
     printf '%s\n' "$raw"
 }
-
-# ---------------------------------------------------------------------------
-# Notes and warnings shown at the end of a run
-# ---------------------------------------------------------------------------
 
 warn_add() {
     WARNINGS+=("$1")

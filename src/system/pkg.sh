@@ -1,10 +1,3 @@
-# shellcheck shell=bash
-# Package manager wrapper (apt / dnf / yum).
-#
-# apt runs fully unattended: it waits for other package managers holding the
-# dpkg lock (common right after a cloud VM boots), keeps locally modified
-# config files instead of prompting, and never asks needrestart questions.
-
 APT_OPTS=(-y -q -o DPkg::Lock::Timeout=600 -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold)
 
 pkg_env() {
@@ -28,7 +21,6 @@ dnf_cmd() {
     fi
 }
 
-# apt_candidate <package> - version apt would install, empty when none.
 apt_candidate() {
     LC_ALL=C apt-cache policy "$1" 2>/dev/null | awk '/Candidate:/ && $2 != "(none)" { print $2; exit }'
 }
@@ -41,7 +33,6 @@ pkg_installed() {
     fi
 }
 
-# pkg_available <package> - installable from the configured repositories.
 pkg_available() {
     if is_debian_family; then
         [[ -n "$(apt_candidate "$1")" ]]
@@ -69,8 +60,6 @@ pkg_upgrade() {
     fi
 }
 
-# pkg_install <package>... - installs packages (recommended packages included,
-# as in 1.x).
 pkg_install() {
     (($#)) || return 0
     if is_debian_family; then
@@ -91,7 +80,6 @@ pkg_install_lean() {
     fi
 }
 
-# pkg_install_any <package>... - installs the first package that installs.
 pkg_install_any() {
     local p
     for p in "$@"; do
@@ -100,8 +88,6 @@ pkg_install_any() {
     return 1
 }
 
-# Removes apt sources for third-party repositories that do not (yet) publish a
-# release for this codename; a single 404 source makes every apt-get update fail.
 apt_drop_unpublished_sources() {
     is_debian_family || return 0
     [[ -n "$PKG_CODENAME" ]] || return 0
@@ -124,7 +110,6 @@ apt_drop_unpublished_sources() {
     done
 }
 
-# apt_repo_state <base url> - published | missing | unknown for this codename.
 apt_repo_state() {
     local code
     [[ -n "$PKG_CODENAME" ]] || { echo "unknown"; return 0; }
@@ -147,7 +132,6 @@ apt_source_has() {
     return 1
 }
 
-# The commands the installer itself needs, mapped to package names.
 essentials_missing() {
     local -a want=()
     if is_debian_family; then

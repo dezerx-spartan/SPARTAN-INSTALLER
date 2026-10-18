@@ -1,7 +1,3 @@
-# shellcheck shell=bash
-# Redis (or Valkey) for Spartan's cache and queue. Same behaviour as 1.x: the
-# database stays the backend whenever Redis is not usable from PHP.
-
 redis_cli_bin() {
     if have redis-cli; then echo redis-cli; elif have valkey-cli; then echo valkey-cli; fi
 }
@@ -31,7 +27,6 @@ redis_conf_path() {
     done
 }
 
-# php_redis_ping <host> <port> <password> <username> <url>
 php_redis_ping() {
     php -r '
         [, $host, $port, $password, $username, $url] = $argv;
@@ -92,8 +87,6 @@ install_redis() {
     return 0
 }
 
-# Memory limit (5% of RAM, 64-512 MB) and append-only persistence so queued
-# jobs survive a restart. Only applied to a Redis we installed ourselves.
 config_redis() {
     local cli conf
     cli="$(redis_cli_bin)"
@@ -141,7 +134,6 @@ app_redis_ready() {
 
 redis_install_prefix() { printf 'spartan_%s_' "$(printf '%s' "$APP_DIR" | sha1sum | cut -c1-10)"; }
 
-# Fresh installs: Redis when it works, the database otherwise.
 configure_cache_queue_drivers() {
     if app_redis_ready; then
         [[ -n "$(env_read_value REDIS_PREFIX)" ]] || env_write_value REDIS_PREFIX "$(redis_install_prefix)"
@@ -159,8 +151,6 @@ database_queue_job_count() {
     (cd "$APP_DIR" && php artisan tinker --execute='echo \Illuminate\Support\Facades\DB::table("jobs")->count();' 2>/dev/null | tr -dc '0-9') || true
 }
 
-# Updates: moves cache and queue from the database to Redis. Jobs waiting in
-# the database queue are processed first so none are stranded.
 switch_to_redis_drivers() {
     local cache queue move_cache=0 move_queue=0
     cache="$(env_read_value CACHE_STORE)"

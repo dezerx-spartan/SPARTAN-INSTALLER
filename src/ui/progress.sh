@@ -1,15 +1,3 @@
-# shellcheck shell=bash
-# The progress view used while a plan runs: one row per phase with its state
-# and time, the task that is running right now and its latest output line.
-# The overall progress is the bar in the header (ui_track).
-#
-#   ✔ Preparing the system                                   12s
-#   ⠼ Installing PHP 8.4                                      41s
-#   ○ Installing Nginx
-#   ...
-#   Installing PHP extensions · 18s
-#   Setting up php8.4-intl (8.4.13-1) ...
-
 PROG_TITLE=""
 declare -a PROG_IDS=() PROG_LABELS=() PROG_STATE=() PROG_DUR=() PROG_WEIGHT=()
 PROG_CUR=-1
@@ -17,7 +5,6 @@ PROG_PHASE_T0=0
 PROG_NOTICE=""
 PROG_PCT=0
 
-# Geometry of the moving parts (set by _prog_layout)
 PROG_FIRST=0 PROG_VIS=0 PROG_ROW0=0 PROG_TASK_ROW=0
 
 progress_reset() {
@@ -35,7 +22,6 @@ progress_add() {
     PROG_DUR+=("")
 }
 
-# progress_percent - share of the plan's weight that is finished, in PROG_PCT.
 progress_percent() {
     local total=0 done_w=0 i
     for i in "${!PROG_IDS[@]}"; do
@@ -51,8 +37,6 @@ progress_percent() {
 
 _prog_layout() {
     local n=${#PROG_IDS[@]}
-    # Phases, a blank row and the two task lines. The view has no buttons,
-    # so the task lines take the rows a button row would use.
     ui_layout_dialog $((n + 1)) "$UI_WIDTH"
     PROG_VIS=$((DLG_IH - 1))
     ((PROG_VIS > n)) && PROG_VIS=$n
@@ -132,7 +116,6 @@ progress_draw_full() {
     ui_frame_end
 }
 
-# Ticker callback: redraws only what moves.
 _prog_tick() {
     local frame="$1"
     if ((frame < 0)); then
@@ -144,10 +127,6 @@ _prog_tick() {
     ((frame % 3 == 0)) && _prog_task_area
     fb_flush
 }
-
-# ---------------------------------------------------------------------------
-# Line and plain output
-# ---------------------------------------------------------------------------
 
 LINE_TASK_DESC=""
 LINE_TASK_T0=0
@@ -175,10 +154,6 @@ _line_tick() {
         printf '\r\e[K    %s%s%s %s' "$L_A" "$g" "$L_R" "$line" >&"$UI_FD"
     fi
 }
-
-# ---------------------------------------------------------------------------
-# Hooks used by the plan runner
-# ---------------------------------------------------------------------------
 
 ui_plan_begin() {
     case "$UI_MODE" in
@@ -233,7 +208,7 @@ ui_task_end() {
         line)
             ticker_stop
             if ((rc == 0)); then
-                printf '\r\e[K    %s%s%s %s %s(%s)%s\n' "$L_OK" "$G_OK" "$L_R" "$desc" "$L_D" "$dur" "$L_R" >&"$UI_FD"
+                printf '\r\e[K    %s%s%s %s %s(%s)%s\n' "$L_A" "$G_DONE" "$L_R" "$desc" "$L_D" "$dur" "$L_R" >&"$UI_FD"
             else
                 printf '\r\e[K    %s%s%s %s %s(failed)%s\n' "$L_E" "$G_FAIL" "$L_R" "$desc" "$L_E" "$L_R" >&"$UI_FD"
             fi
@@ -244,8 +219,6 @@ ui_task_end() {
     esac
 }
 
-# ui_task_note <message> - a warning line while a plan runs (line/plain only;
-# the full-screen view shows warnings on the phase and at the end).
 ui_task_note() {
     case "$UI_MODE" in
         line) printf '\r\e[K    %s%s %s%s\n' "$L_W" "$G_WARN" "$1" "$L_R" >&"$UI_FD" ;;

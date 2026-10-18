@@ -7,7 +7,7 @@ Version 2 replaces the whiptail dialogs of 1.x with a full-screen interface, add
 ## Install
 
 ```bash
-sudo bash -c "$(curl -fsSL https://github.com/dezerx-spartan/SPARTAN-INSTALLER-NEW/releases/latest/download/spartan_installer.sh)"
+sudo bash -c "$(curl -fsSL https://github.com/dezerx-spartan/SPARTAN-INSTALLER/releases/latest/download/spartan_installer.sh)"
 ```
 
 The wizard asks for the domain, license key, install folder, database, performance settings and SSL, shows a review screen, and only then changes the server. Run it inside `screen` or `tmux` if your SSH connection is unreliable (the installer keeps going if the connection drops, but you lose the view).
@@ -15,7 +15,7 @@ The wizard asks for the domain, license key, install folder, database, performan
 ### Without prompts
 
 ```bash
-sudo bash -c "$(curl -fsSL https://github.com/dezerx-spartan/SPARTAN-INSTALLER-NEW/releases/latest/download/spartan_installer.sh)" -- \
+sudo bash -c "$(curl -fsSL https://github.com/dezerx-spartan/SPARTAN-INSTALLER/releases/latest/download/spartan_installer.sh)" -- \
   --non-interactive --install --license=SPARTANPROFESSIONAL_XXXX --domain=dash.example.com --ssl-mode=install
 ```
 
@@ -24,8 +24,8 @@ sudo bash -c "$(curl -fsSL https://github.com/dezerx-spartan/SPARTAN-INSTALLER-N
 ### From a clone
 
 ```bash
-git clone https://github.com/dezerx-spartan/SPARTAN-INSTALLER-NEW.git
-cd SPARTAN-INSTALLER-NEW
+git clone https://github.com/dezerx-spartan/SPARTAN-INSTALLER.git
+cd SPARTAN-INSTALLER
 sudo bash spartan_installer.sh
 ```
 
@@ -106,13 +106,11 @@ The **Tools** menu (or the matching flags) can repair ownership and permissions,
 
 ## Development
 
-The installer is split into small modules under `src/` (see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)). From a clone, `spartan_installer.sh` runs the sources directly.
+The installer is split into small modules under `src/`. From a clone, `spartan_installer.sh` runs the sources directly.
 
 ```bash
-bash tests/run.sh          # unit tests (no root, nothing on the system changes)
 bash tools/lint.sh         # bash -n and shellcheck
 bash spartan_installer.sh --demo
 bash tools/build.sh        # dist/: bootstrap + single-file bundle + checksum
+GITHUB_TOKEN=... bash tools/release.sh --publish
 ```
-
-Releasing is described in [docs/RELEASING.md](docs/RELEASING.md).

@@ -1,7 +1,3 @@
-# shellcheck shell=bash
-# Removing an installation. The shared stack (PHP, Nginx, the database server,
-# Redis, Node.js) stays installed: other sites may use it.
-
 scr_uninstall_pick() {
     PICK_TITLE="Uninstall"
     screen_pick_install || return $?
@@ -121,7 +117,7 @@ uninstall_run() {
     plan_add remove "Removing DezerX Spartan" 60 un_remove
     if plan_run; then
         summary_reset "Uninstalled" 1
-        summary_add "{ok}${G_OK}{/} DezerX Spartan was removed from $(tx "$APP_DIR")."
+        summary_add "DezerX Spartan was removed from $(tx "$APP_DIR")."
         ((RM_FINAL_BACKUP)) && summary_kv "Backup" "${APP_BACKUP_FILE}"
         ((RM_DATABASE)) || summary_add "\nThe database ${DB_NAME} was kept."
         summary_add "PHP, Nginx, the database server and Redis are still installed."

@@ -1,14 +1,7 @@
-# shellcheck shell=bash
-# Swap: a permanent /swapfile on small servers (or when --add-swap is given)
-# and a temporary one while the frontend is built.
-
 SWAP_FILE="/swapfile"
 SWAP_TEMP_FILE="/swapfile_spartan_temp"
 SWAP_TEMP_ACTIVE=0
 
-# swap_make <file> <size MB> - allocates and enables a swap file. Handles btrfs
-# (needs a no-copy-on-write file) and filesystems where fallocate'd files are
-# rejected by swapon (falls back to writing zeros).
 swap_make() {
     local file="$1" mb="$2" fstype
     fstype="$(stat -f -c %T "$(dirname "$file")" 2>/dev/null)"
@@ -22,7 +15,6 @@ swap_make() {
     chmod 600 "$file"
     mkswap "$file" >/dev/null || return 1
     if ! swapon "$file" 2>/dev/null; then
-        # Some filesystems refuse files with unwritten extents; write real zeros.
         rm -f "$file"
         [[ "$fstype" == btrfs ]] && { touch "$file"; chattr +C "$file" 2>/dev/null; }
         dd if=/dev/zero of="$file" bs=1M count="$mb" status=none || return 1
@@ -33,7 +25,6 @@ swap_make() {
     return 0
 }
 
-# swap_needed_mb - target size for the permanent swap file, 0 when none is needed.
 swap_needed_mb() {
     in_container && { echo 0; return; }
     local target=2048 cur
@@ -72,7 +63,6 @@ swap_ensure_permanent() {
     echo "Swap enabled: $(swap_total_mb) MB."
 }
 
-# swap_temp_on <needed MB> - temporary swap for the frontend build.
 swap_temp_on() {
     local mb="$1"
     SWAP_TEMP_ACTIVE=0

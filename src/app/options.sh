@@ -1,16 +1,3 @@
-# shellcheck shell=bash
-# script_options.json in the application directory (same format as 1.x):
-#
-#   {
-#     "keep":    { "nginx": false, "css": true, "themes": true, "portals": true, "emails": true, "favicon": true },
-#     "exclude": { "files": [], "folders": [] },   <- kept exactly as they are across updates
-#     "delete":  []                                 <- removed after every update
-#   }
-#
-# Precedence for the keep flags: defaults < this file < command line flags.
-# Choices made in the update wizard are saved back to "keep", so automatic
-# (non-interactive) updates later respect them.
-
 opts_file() { printf '%s/%s' "$APP_DIR" "$OPTIONS_JSON_NAME"; }
 
 opts_valid() { [[ -f "$(opts_file)" ]] && jq -e . "$(opts_file)" >/dev/null 2>&1; }
@@ -69,7 +56,6 @@ opts_save_keep() {
     rm -f "$tmp"
 }
 
-# opts_clean_path <path> - path relative to APP_DIR, or empty when unsafe.
 opts_clean_path() {
     local p
     p="$(trim "$1")"
@@ -82,7 +68,6 @@ opts_clean_path() {
     printf '%s' "$p"
 }
 
-# Copies "exclude" items aside before the old version is removed.
 opts_stage_exclusions() {
     have jq || return 0
     opts_valid || return 0
@@ -106,8 +91,6 @@ opts_restore_exclusions() {
     echo "Excluded items restored."
 }
 
-# Removes the "delete" items from the freshly deployed version (1.x deleted them
-# from the old version just before it was wiped, which had no effect).
 opts_apply_deletions() {
     have jq || return 0
     opts_valid || return 0

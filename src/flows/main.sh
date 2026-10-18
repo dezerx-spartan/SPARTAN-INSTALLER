@@ -1,6 +1,3 @@
-# shellcheck shell=bash
-# Program entry: set-up, then the interactive menu or the requested action.
-
 spartan_main() {
     SPARTAN_MAIN_PID=$$
     SPARTAN_USER_LOCALE="${LC_ALL:-${LC_CTYPE:-${LANG:-}}}"
@@ -38,8 +35,6 @@ spartan_main() {
     }
     for w in "${ARG_WARNINGS[@]}"; do log "$w"; done
 
-    # From here on stray output goes to the log; the interface writes to the
-    # terminal (TTY_FD) or the original stdout (UI_FD).
     exec >>"$LOG" 2>&1
     trap 'spartan_on_exit $?' EXIT
     trap spartan_on_hup HUP

@@ -1,16 +1,3 @@
-# shellcheck shell=bash
-# The DezerX mark at the top of the screen, sampled from the official logo at
-# two sizes (5 and 4 terminal rows). Each bitmap row is one pixel row; two
-# share a character cell through half blocks, so the pixels come out square.
-#
-#   .      transparent
-#   A..Z   shades of the white D (including its anti-aliased edges)
-#   a..z   shades of the blue X
-#
-# LOGO_PAL holds "r g b alpha" for each shade. 24-bit and 256 colour terminals
-# blend the edges into the background; 16 colours get plain white and blue,
-# and terminals without UTF-8 get the ASCII version below.
-
 declare -A LOGO_PAL=(
     [A]="238 239 242 23" [B]="223 230 240 64" [C]="243 245 249 61" [D]="244 244 247 77"
     [E]="238 242 246 107" [F]="245 246 248 129" [G]="244 245 248 155" [H]="228 233 241 191"
@@ -47,7 +34,6 @@ LOGO_4=(
     "LJMNNLE....gnnc"
 )
 
-# The same mark in ASCII; "@" separates the D (white) from the X (blue).
 LOGO_ASCII_5=(
     ' _______@    ____'
     '|  ___  \@  /   /'
@@ -67,9 +53,6 @@ declare -a LOGO_ROWS=()
 LOGO_W=0
 LOGO_KEY=""
 
-# _logo_c256 <r> <g> <b> <D|x> - xterm-256 colour for a shade. The D is
-# neutral and uses the grey ramp; the X takes the nearest blue of the colour
-# cube (plain nearest-colour matching turns its dark edges teal).
 _logo_c256() {
     if [[ "$4" == x ]]; then
         local -a lv=(0 95 135 175 215 255)
@@ -97,8 +80,6 @@ _logo_c256() {
     fi
 }
 
-# logo_render <rows> - draws LOGO_<rows> for the current terminal into
-# LOGO_ROWS (one printable string per terminal row) and sets LOGO_W.
 logo_render() {
     local size="$1"
     [[ "$LOGO_KEY" == "${size}|${UI_DEPTH}|${UI_UTF8}" ]] && return 0
@@ -120,9 +101,6 @@ logo_render() {
         return 0
     fi
 
-    # Style of each shade at this depth: foreground for its half of a
-    # cell, background when it shares the cell with another colour. Shades
-    # left out of fg[] are drawn as background.
     local -A fg=() bg=()
     local k r g b a rr=17 rg=21 rb=28 root_bg
     read -r rr rg rb <<<"${UI_RGB[root]:-17 21 28}"
@@ -181,7 +159,6 @@ logo_render() {
             else
                 cell="${bg[$u]}${fg[$t]}" t="$G_HALF_UP"
             fi
-            # Only write a style when it differs from the previous cell's.
             [[ "$cell" == "$prev" ]] || line+="$cell"
             prev="$cell"
             line+="$t"

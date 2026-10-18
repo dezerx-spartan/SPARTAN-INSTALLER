@@ -1,10 +1,3 @@
-# shellcheck shell=bash
-# Backups taken before an update (and before uninstalling or overwriting).
-#
-# File names and the "keep 7 of each" rotation match 1.x. The directory moved
-# from /tmp/spartan (cleared on reboot, world-readable) to /var/backups/spartan
-# with mode 700; backups found in the old place are moved over once.
-
 backup_prefixes() {
     printf '%s\n' spartan_backup_ spartan_db_backup_ spartan_php_backup_ spartan_ioncube_backup_ \
         spartan_conf_backup_ spartan_sys_backup_
@@ -25,8 +18,6 @@ backup_prepare_dir() {
     return 0
 }
 
-# Space check before anything is written: application (without node_modules)
-# plus database, with 20% headroom.
 backup_check_space() {
     local app_mb db_mb need free
     app_mb="$(dir_size_mb "$APP_DIR" --exclude=node_modules)"
@@ -49,8 +40,6 @@ create_app_backup() {
     (umask 077 && tar -czf "$APP_BACKUP_FILE" -C "$(dirname "$APP_DIR")" \
         --exclude="$(basename "$APP_DIR")/node_modules" --exclude="$(basename "$APP_DIR")/.cleanup.*" \
         --warning=no-file-changed "$(basename "$APP_DIR")") || rc=$?
-    # GNU tar exits 1 when a file changed while it was read (a log being
-    # written); the archive is still complete.
     if ((rc > 1)) || [[ ! -s "$APP_BACKUP_FILE" ]]; then
         echo "tar failed with exit code ${rc}."
         return 1
@@ -80,7 +69,6 @@ create_nginx_backup() {
     install -m 600 "$NGINX_RESTORE_PATH" "$NGINX_BACKUP_FILE" && echo "Nginx vhost backup: ${NGINX_BACKUP_FILE}"
 }
 
-# _tar_list <archive> <path>... - archives the paths that exist (relative to /).
 _tar_list() {
     local out="$1"
     shift
@@ -125,8 +113,6 @@ create_ioncube_backup() {
     return "$rc"
 }
 
-# Service units, the Octane upstream, /etc/dezerx and root's crontab, so a
-# rollback also undoes service changes.
 create_sys_backup() {
     SYS_BACKUP_FILE="${BACKUP_DIR}/spartan_sys_backup_${BACKUP_TS}.tar.gz"
     mkdir -p /etc/dezerx
@@ -144,7 +130,6 @@ create_sys_backup() {
 rotate_backups() {
     local prefix
     while read -r prefix; do
-        # shellcheck disable=SC2012
         ls -1t "${BACKUP_DIR}/${prefix}"* 2>/dev/null | tail -n +$((BACKUP_KEEP + 1)) | while IFS= read -r f; do
             rm -f -- "$f" && echo "Removed old backup $(basename "$f")"
         done
@@ -153,7 +138,6 @@ rotate_backups() {
 }
 
 backups_newest() {
-    # shellcheck disable=SC2012
     ls -1t "${BACKUP_DIR}"/spartan_backup_*.tar.gz 2>/dev/null | head -n1
 }
 

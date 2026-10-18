@@ -1,13 +1,5 @@
-# shellcheck shell=bash
-# PHP: repositories, version choice, packages, PHP-FPM and OPcache.
-
 php_minor() { php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;' 2>/dev/null || echo "$PHP_VER"; }
 
-# ---------------------------------------------------------------------------
-# Version choice (apt). 8.4 is preferred. When it is not packaged we take the
-# newest version between 8.2 and 8.4, because ionCube publishes loaders for new
-# PHP releases months after they come out. Newer versions are a last resort.
-# ---------------------------------------------------------------------------
 php_pick_apt_version() {
     [[ -n "$(apt_candidate "php${PHP_VER}-fpm")" ]] && return 0
 
@@ -86,9 +78,6 @@ php_enable_repo() {
     esac
 }
 
-# EPEL and Remi for EL 8/9/10. RHEL proper has no epel-release package in its
-# repositories, so it is installed from the EPEL URL, and CodeReady/CRB is
-# enabled because Remi's PHP builds need libraries from it.
 el_enable_epel_remi() {
     pkg_install dnf-plugins-core || true
     if [[ "$DISTRO_ID" == rhel ]]; then
@@ -127,7 +116,6 @@ php_install_packages() {
         for p in "${PHP_EXTRA_PKGS[@]}"; do
             pkg_install_lean "$p" || echo "Optional package ${p} could not be installed."
         done
-        # Several PHP versions side by side: make the CLI use ours.
         if [[ -x "/usr/bin/php${PHP_VER}" ]] && have update-alternatives; then
             update-alternatives --set php "/usr/bin/php${PHP_VER}" >/dev/null 2>&1 || true
         fi
@@ -150,7 +138,6 @@ php_install_packages() {
     PHP_VER="$got"
 }
 
-# Octane (RoadRunner) needs sockets, posix and pcntl in the CLI.
 php_octane_requirements() {
     local missing=() ext
     for ext in sockets posix pcntl; do
@@ -167,9 +154,6 @@ php_octane_requirements() {
 
 php_redis_available() { php -r 'exit(class_exists("Redis") ? 0 : 1);' 2>/dev/null; }
 
-# ---------------------------------------------------------------------------
-# PHP-FPM
-# ---------------------------------------------------------------------------
 php_fpm_service() {
     local s
     s="php${PHP_VER}-fpm"
@@ -218,7 +202,6 @@ php_fpm_pool_conf() {
     return 1
 }
 
-# Runs the PHP-FPM pool as the web server user (1.x behaviour).
 config_php_fpm() {
     local cfg
     cfg="$(php_fpm_pool_conf)" || { echo "No PHP-FPM pool configuration found."; return 0; }
@@ -232,7 +215,6 @@ config_php_fpm() {
     php_fpm_restart
 }
 
-# conf.d directories for every SAPI of the active PHP version.
 php_conf_dirs() {
     local -a dirs=()
     if is_debian_family; then
@@ -248,10 +230,6 @@ php_conf_dirs() {
     return 0
 }
 
-# ---------------------------------------------------------------------------
-# OPcache: tuned for FPM, plus a file cache shared by Octane, the queue workers
-# and cron (they load /etc/dezerx/php-*.d through PHP_INI_SCAN_DIR).
-# ---------------------------------------------------------------------------
 config_opcache() {
     local wrote=0 dir enable_cli memory
     while read -r dir; do

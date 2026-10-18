@@ -1,11 +1,3 @@
-# shellcheck shell=bash
-# MariaDB / MySQL: server detection and installation, database and user,
-# tuning, and the dump/restore used by backups.
-#
-# Passwords never appear on a command line (visible in `ps`) or in the log:
-# the client reads them from a mode-600 option file inside this run's private
-# directory, and SQL is sent on stdin.
-
 db_is_local() {
     [[ "${DB_HOST:-127.0.0.1}" == 127.0.0.1 || "${DB_HOST:-}" == localhost || "${DB_HOST:-}" == ::1 ]]
 }
@@ -13,7 +5,6 @@ db_is_local() {
 db_client() { if have mariadb; then echo mariadb; else echo mysql; fi; }
 db_dump_bin() { if have mariadb-dump; then echo mariadb-dump; else echo mysqldump; fi; }
 
-# Escapes a value for a my.cnf option file (double-quoted).
 _cnf_escape() {
     local v="$1"
     v="${v//\\/\\\\}"
@@ -21,16 +12,12 @@ _cnf_escape() {
     printf '%s' "$v"
 }
 
-# Options only the interactive client understands. mysqldump/mariadb-dump read
-# [client] as well and abort on options they do not know ("unknown variable
-# 'connect-timeout=10'"), so these go in the [mysql] group.
 _cnf_client_only() {
     echo
     echo "[mysql]"
     echo "connect-timeout=10"
 }
 
-# db_app_cnf - option file with the application's credentials; path in REPLY.
 db_app_cnf() {
     local f="${RUN_DIR}/db-app.cnf"
     (
@@ -61,7 +48,6 @@ db_root_cnf() {
     REPLY="$f"
 }
 
-# db_app_sql <sql> - runs SQL as the application user (SQL on stdin).
 db_app_sql() {
     db_app_cnf
     printf '%s\n' "$1" | "$(db_client)" --defaults-extra-file="$REPLY" "${@:2}"
@@ -72,11 +58,6 @@ db_check_connection() {
     "$(db_client)" --defaults-extra-file="$REPLY" -e "SELECT 1;" "$DB_NAME" >/dev/null
 }
 
-# ---------------------------------------------------------------------------
-# Server
-# ---------------------------------------------------------------------------
-
-# Sets EXISTING_DB_SERVER (mariadb | mysql | empty) and EXISTING_DB_VERSION.
 db_server_detect() {
     EXISTING_DB_SERVER=""
     EXISTING_DB_VERSION=""
@@ -106,7 +87,6 @@ db_server_label() {
     esac
 }
 
-# MySQL is not packaged on Debian (only MariaDB is); offer it only when it is.
 db_mysql_available() {
     case "$OS_BASE" in
         ubuntu | debian) [[ -n "$(apt_candidate mysql-server)" ]] ;;
@@ -145,9 +125,6 @@ install_db_engine() {
     echo "Database server: $(db_server_label)"
 }
 
-# db_root_sql <sql> - runs SQL with administrative rights. Tries root through
-# the unix socket (the default on fresh MariaDB/MySQL installs), then root's
-# ~/.my.cnf, then the root password given in the wizard or --db-root-pass.
 db_root_sql() {
     local sql="$1" client
     client="$(db_client)"
@@ -191,8 +168,6 @@ GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${user}'@'${host}';
 FLUSH PRIVILEGES;"
 }
 
-# InnoDB buffer pool sized from RAM, slow query log over 250 ms (1.x tuning).
-# Written once; an existing file is never overwritten.
 config_db_tuning() {
     db_is_local || { echo "Remote database, not tuning."; return 0; }
     local dir="" c
@@ -217,11 +192,6 @@ config_db_tuning() {
     fi
 }
 
-# ---------------------------------------------------------------------------
-# Dump and restore (used by backups and rollback)
-# ---------------------------------------------------------------------------
-
-# db_dump <file.sql.gz> - consistent dump; fails if the dump is incomplete.
 db_dump() {
     local out="$1"
     db_app_cnf
@@ -230,7 +200,6 @@ db_dump() {
         "$(db_dump_bin)" --defaults-extra-file="$REPLY" --single-transaction --quick --no-tablespaces \
             --default-character-set=utf8mb4 "$DB_NAME" | gzip -c >"$out"
     ) || return 1
-    # mysqldump writes this trailer only when it finished.
     gzip -dc "$out" | tail -n 3 | grep -q -- "-- Dump completed" || {
         echo "The database dump is incomplete."
         return 1
@@ -238,8 +207,6 @@ db_dump() {
     chmod 600 "$out"
 }
 
-# db_restore <file.sql.gz> - empties the database first, so tables created by a
-# failed update are not left behind next to the restored ones.
 db_restore() {
     local file="$1" client drops
     client="$(db_client)"

@@ -1,7 +1,3 @@
-# Load order for the installer modules.
-# src/main.sh sources these in a git checkout; tools/build.sh concatenates them
-# (in this order) into the single-file release bundle. Paths are relative to src/.
-
 core/globals.sh
 core/util.sh
 core/log.sh

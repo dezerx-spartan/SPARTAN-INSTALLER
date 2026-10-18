@@ -1,20 +1,11 @@
-# shellcheck shell=bash
-# Settings, paths and defaults shared by every module.
-#
-# File locations, unit names and .env keys match the 1.x installer on purpose:
-# servers installed with 1.x are updated in place by this one.
-
 : "${SPARTAN_VERSION:=0.0.0-dev}"
-: "${SPARTAN_RELEASE_REPO:=dezerx-spartan/SPARTAN-INSTALLER-NEW}"
+: "${SPARTAN_RELEASE_REPO:=dezerx-spartan/SPARTAN-INSTALLER}"
 
 TITLE="DezerX Spartan Installer"
 PRODUCT_LABEL="DezerX Spartan"
 WEBSITE_URL="https://dezerx.com"
 DISCORD_URL="https://discord.dezerx.com"
 
-# ---------------------------------------------------------------------------
-# Files and directories
-# ---------------------------------------------------------------------------
 LOG="/var/log/spartan_installer.log"
 LOG_MAX_BYTES=$((10 * 1024 * 1024))
 APP_DEFAULT_DIR="/var/www/spartan"
@@ -36,12 +27,9 @@ APP_GROUP_DEFAULT="www-data"
 APP_USER=""
 APP_GROUP=""
 
-# ---------------------------------------------------------------------------
-# Stack
-# ---------------------------------------------------------------------------
-PHP_VER="8.4"           # preferred PHP version
-PHP_MIN_VER="8.2"       # Spartan's composer.json requires ^8.2
-PHP_IONCUBE_MAX="8.4"   # newest PHP we pick automatically (ionCube support lags PHP releases)
+PHP_VER="8.4"
+PHP_MIN_VER="8.2"
+PHP_IONCUBE_MAX="8.4"
 NODE_MIN_MAJOR=20
 
 PHP_PPA_URL="https://ppa.launchpadcontent.net/ondrej/php/ubuntu"
@@ -51,9 +39,6 @@ NGINX_APT_URL="https://nginx.org/packages/mainline"
 LICENSE_API_VERIFY="https://market.dezerx.com/api/license/verify"
 LICENSE_API_DOWNLOAD="https://market.dezerx.com/api/license/download"
 
-# ---------------------------------------------------------------------------
-# Services (unit names are relied upon by Spartan itself; do not rename)
-# ---------------------------------------------------------------------------
 OCTANE_ENABLED=1
 OCTANE_CHOICE=""
 OCTANE_HOST="127.0.0.1"
@@ -72,9 +57,6 @@ OPCACHE_FILE_CACHE_DIR="/var/cache/dezerx/opcache"
 OPCACHE_CRON_FILE_CACHE_DIR="/var/cache/dezerx/opcache-root"
 NGINX_UPSTREAM_CONF="/etc/nginx/conf.d/spartan-octane.conf"
 
-# ---------------------------------------------------------------------------
-# Choices. CLI flags fill these first, the wizard fills the rest.
-# ---------------------------------------------------------------------------
 ACTION=""
 CHOICE=""
 NONINTERACTIVE=0
@@ -102,7 +84,7 @@ DB_USER="dezer"
 DB_PASS=""
 DB_ROOT_PASS=""
 DB_PASS_GENERATED=0
-SSL_MODE=""             # install | assume | later (1.x called this certbot_choice)
+SSL_MODE=""
 SSL_EMAIL=""
 ENABLE_IPV6=0
 IPV6_FROM_CLI=0
@@ -117,15 +99,11 @@ KEEP_EMAILS=1
 KEEP_FAVICON=1
 declare -A KEEP_FROM_CLI=()
 
-# Uninstall selections
 RM_FINAL_BACKUP=1
 RM_DATABASE=0
 RM_BACKUPS=0
 RM_CERT=0
 
-# ---------------------------------------------------------------------------
-# Runtime state
-# ---------------------------------------------------------------------------
 RUN_DIR=""
 RUN_STARTED=0
 DISTRO_ID=""

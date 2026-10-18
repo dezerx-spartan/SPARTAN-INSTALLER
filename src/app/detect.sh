@@ -1,7 +1,3 @@
-# shellcheck shell=bash
-# Finds existing DezerX Spartan installations, so the update and tools screens
-# can offer the right directory instead of asking the user to type it.
-
 DETECTED_APP_DIR=""
 DETECTED_DOMAIN=""
 DETECTED_VERSION=""
@@ -28,7 +24,6 @@ app_domain_of() {
     printf '%s' "${url%%/*}"
 }
 
-# Candidate directories, most likely first.
 app_detect_candidates() {
     local -a c=()
     ((USED_APP_DIR)) && c+=("$APP_DIR")

@@ -1,10 +1,3 @@
-# shellcheck shell=bash
-# Operating system detection and the support matrix.
-#
-# OS_FAMILY  debian | rhel | fedora | unsupported
-# OS_BASE    ubuntu | debian | el | fedora   (what repositories are built for)
-# PKG_CODENAME  release codename used for apt repositories (Mint & co. map to Ubuntu)
-
 OS_BASE=""
 OS_EL_MAJOR=""
 PKG_CODENAME=""
@@ -12,10 +5,7 @@ PKG_CODENAME=""
 os_detect() {
     local id="unknown" ver="" code="" name="Linux" like="" ubuntu_code=""
     if [[ -r /etc/os-release ]]; then
-        # Read in a subshell: os-release defines VERSION, NAME, ID, ... which
-        # would otherwise overwrite the installer's own variables.
         IFS=$'\t' read -r id ver code name like ubuntu_code < <(
-            # shellcheck source=/dev/null
             . /etc/os-release
             printf '%s\t%s\t%s\t%s\t%s\t%s\n' "${ID:-unknown}" "${VERSION_ID:-}" "${VERSION_CODENAME:-}" \
                 "${PRETTY_NAME:-${NAME:-Linux}}" "${ID_LIKE:-}" "${UBUNTU_CODENAME:-}"
@@ -30,7 +20,6 @@ os_detect() {
         DISTRO_CODENAME="$(lsb_release -sc 2>/dev/null || true)"
     fi
     PKG_CODENAME="$DISTRO_CODENAME"
-    # Ubuntu 26.04+ ships PHP 8.5; use it.
     if [[ "$DISTRO_ID" == ubuntu && "${ver%%.*}" =~ ^[0-9]+$ ]] && ((${ver%%.*} >= 26)); then
         PHP_VER="8.5" PHP_IONCUBE_MAX="8.5"
     fi
@@ -68,7 +57,6 @@ os_detect() {
     log "OS: ${DISTRO_NAME} (id=${DISTRO_ID} version=${DISTRO_VER} codename=${DISTRO_CODENAME:-none} family=${OS_FAMILY} arch=${ARCH}) support=${OS_SUPPORT}"
 }
 
-# Sets OS_SUPPORT (supported | untested | unsupported) and OS_SUPPORT_NOTE.
 os_support_check() {
     OS_SUPPORT="supported"
     OS_SUPPORT_NOTE=""

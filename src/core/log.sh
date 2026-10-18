@@ -1,10 +1,3 @@
-# shellcheck shell=bash
-# Run log (/var/log/spartan_installer.log) with secret masking and rotation.
-#
-# The log is created with mode 600: it records command output that can include
-# hostnames, paths and database names. Values registered with secret_add (license
-# key, database passwords) are replaced with **** before anything is written.
-
 LOG_FD=""
 declare -a SECRETS=()
 
@@ -18,7 +11,6 @@ secret_add() {
     done
 }
 
-# mask <string> - prints the string with every registered secret replaced.
 mask() {
     local msg="$1" s
     for s in "${SECRETS[@]}"; do msg="${msg//"$s"/****}"; done
@@ -32,8 +24,6 @@ log() {
     printf '[%(%Y-%m-%d %H:%M:%S)T] %s\n' -1 "$msg" >&"$LOG_FD"
 }
 
-# log_file <file> - appends a command's captured output to the log (indented,
-# secrets masked, carriage-return progress bars collapsed to their last frame).
 log_file() {
     [[ -n "$LOG_FD" && -s "$1" ]] || return 0
     SPARTAN_MASK="$(printf '%s\n' "${SECRETS[@]}")" awk '

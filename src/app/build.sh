@@ -1,6 +1,3 @@
-# shellcheck shell=bash
-# Building the application: Composer, npm and artisan.
-
 artisan() { (cd "$APP_DIR" && php artisan "$@" --no-interaction); }
 
 app_maintenance_on() {
@@ -28,8 +25,6 @@ app_npm_install() {
     fi
 }
 
-# The Vite build needs about 4 GB. Small servers get temporary swap for the
-# duration of the build (1.x logic), and Node's heap is sized to what exists.
 app_npm_build() {
     [[ -f "${APP_DIR}/package.json" ]] || return 0
     local ram swap total target=4096 overhead=512

@@ -1,15 +1,6 @@
-# shellcheck shell=bash
-# One palette for every screen, rendered at the colour depth the terminal supports.
-#
-#   24-bit  COLORTERM=truecolor|24bit
-#   256     TERM=*256color* (the default over SSH, where COLORTERM is not forwarded)
-#   16      the Linux console and unknown terminals
-#   none    NO_COLOR or --no-color
-
 UI_DEPTH=256
 UI_UTF8=1
 
-# name           truecolor        256   16 (fg code)
 _ui_palette() {
     cat <<'EOF'
 root         17 21 28        233   0
@@ -67,9 +58,6 @@ ui_detect_depth() {
     fi
 }
 
-# Glyphs follow the locale the user started us with (SPARTAN_USER_LOCALE is
-# captured before the installer switches its own locale to C.UTF-8). The Linux
-# console fonts lack braille and check marks, so it gets the ASCII set.
 ui_detect_utf8() {
     UI_UTF8=0
     ((FORCE_ASCII)) && return 0
@@ -114,8 +102,6 @@ ui_theme_init() {
     b_accent="$(_ui_bg accent)"; b_accentdim="$(_ui_bg accentdim)"
 
     if ((UI_DEPTH == 16)); then
-        # Eight background colours only: panels share the black root and are
-        # framed by their border, shadows are left out.
         b_panel="$b_root"
         b_input=$'\e[44m'
         b_shadow="$b_root"
@@ -124,7 +110,6 @@ ui_theme_init() {
 
     S_ROOT="${R}${f_text}${b_root}"
     S_FOOT="${R}${f_accentfg}${b_accent}"
-    # Header (on the background) and the flow tab above dialogs.
     S_BRAND="${R}${f_bright}${b_root}"$'\e[1m'
     S_HDR_X="${R}${f_accent}${b_root}"$'\e[1m'
     S_HDR_MUTED="${R}${f_muted}${b_root}"
@@ -160,7 +145,6 @@ ui_theme_init() {
     ((UI_DEPTH == 24)) && S_CURSOR="${R}${f_root}"$'\e[48;2;226;232;240m'
     ((UI_DEPTH == 16)) && S_CURSOR=$'\e[0;7m'
 
-    # Inline text tags (fg and weight only, so the panel background is kept).
     T_B="${f_bright}"$'\e[1m'
     T_D=$'\e[22m'"${f_muted}"
     T_A="${f_accent}"$'\e[1m'
@@ -169,7 +153,6 @@ ui_theme_init() {
     T_E=$'\e[22m'"${f_err}"
 }
 
-# _ui_rgb256 <r> <g> <b> - nearest xterm-256 colour (6x6x6 cube or grey ramp).
 _ui_rgb256() {
     local v ci=() d_cube=0 grey gi gv d
     for v in "$1" "$2" "$3"; do
@@ -187,15 +170,15 @@ _ui_rgb256() {
 ui_glyphs_init() {
     if ((UI_UTF8)); then
         G_H='─' G_V='│' G_TL='┌' G_TR='┐' G_BL='└' G_BR='┘' G_TITLE_L='┤' G_TITLE_R='├'
-        G_OK='✔' G_DONE='●' G_FAIL='✘' G_WARN='!' G_PENDING='○' G_SKIP='–' G_DOT='·' G_BULLET='•'
-        G_NEXT='›' G_BACK='‹' G_RADIO_ON='●' G_RADIO_OFF='○' G_CHECK_ON='✔' G_CHECK_OFF=' '
+        G_DONE='●' G_FAIL='✘' G_WARN='!' G_PENDING='○' G_SKIP='–' G_DOT='·' G_BULLET='•'
+        G_NEXT='›' G_BACK='‹' G_RADIO_ON='●' G_RADIO_OFF='○' G_CHECK_ON='●' G_CHECK_OFF=' '
         G_BAR_ON='━' G_BAR_OFF='─' G_ELLIPSIS='…' G_UP='▲' G_DOWN='▼' G_MASK='•'
         G_HALF_UP='▀' G_HALF_DOWN='▄' G_FULL='█'
         G_SPIN=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
         G_ARROWS='↑↓'
     else
         G_H='-' G_V='|' G_TL='+' G_TR='+' G_BL='+' G_BR='+' G_TITLE_L='[' G_TITLE_R=']'
-        G_OK='+' G_DONE='o' G_FAIL='x' G_WARN='!' G_PENDING='.' G_SKIP='-' G_DOT='-' G_BULLET='*'
+        G_DONE='o' G_FAIL='x' G_WARN='!' G_PENDING='.' G_SKIP='-' G_DOT='-' G_BULLET='*'
         G_NEXT='>' G_BACK='<' G_RADIO_ON='*' G_RADIO_OFF=' ' G_CHECK_ON='x' G_CHECK_OFF=' '
         G_BAR_ON='#' G_BAR_OFF='-' G_ELLIPSIS='~' G_UP='^' G_DOWN='v' G_MASK='*'
         G_HALF_UP='' G_HALF_DOWN='' G_FULL='#'

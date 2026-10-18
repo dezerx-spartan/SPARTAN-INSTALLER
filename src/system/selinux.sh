@@ -1,8 +1,3 @@
-# shellcheck shell=bash
-# SELinux (enforcing by default on AlmaLinux, Rocky, RHEL and Fedora).
-# Without these rules Nginx cannot reach Octane on 127.0.0.1 (502 Bad Gateway)
-# and PHP-FPM cannot write to storage/ (500 errors).
-
 selinux_enforcing() {
     have getenforce && [[ "$(getenforce 2>/dev/null)" == Enforcing ]]
 }

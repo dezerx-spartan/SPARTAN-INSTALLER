@@ -1,6 +1,3 @@
-# shellcheck shell=bash
-# Queue workers: dezerx-queue@1..N grouped under dezerx.target (1.x layout).
-
 setup_systemd_queue() {
     [[ "$QUEUE_WORKERS" =~ ^[0-9]+$ ]] || QUEUE_WORKERS="$(recommend_queue_workers)"
     ((QUEUE_WORKERS < 1)) && QUEUE_WORKERS=1

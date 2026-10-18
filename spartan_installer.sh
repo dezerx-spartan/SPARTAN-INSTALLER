@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 SPARTAN_RELEASE_TAG=""
-SPARTAN_RELEASE_REPO="dezerx-spartan/SPARTAN-INSTALLER-NEW"
+SPARTAN_RELEASE_REPO="dezerx-spartan/SPARTAN-INSTALLER"
 SPARTAN_BUNDLE_SHA256=""
 
 spartan_fail() {

@@ -1,13 +1,3 @@
-# shellcheck shell=bash
-# Demo mode (--demo, alias --test): every screen and the progress view with
-# simulated work. Runs without root and changes nothing; used to preview the
-# interface and to take screenshots.
-#
-# The real wizard screens run unchanged; only the functions that would touch
-# the system or the network are replaced below. As a second safety net, task()
-# refuses to run anything but demo_* functions while DEMO=1.
-
-# demo_work <seconds> - prints plausible output while "working".
 demo_work() {
     local secs="${1:-1}" steps i
     steps=$((${secs%.*} * 4 + 2))
@@ -106,7 +96,7 @@ demo_overrides() {
     }
     install_summary() {
         summary_reset "Installation complete" 1
-        summary_add "{ok}${G_OK}{/} DezerX Spartan is installed and running."
+        summary_add "DezerX Spartan is installed and running."
         summary_add ""
         summary_kv "Dashboard" "https://${DOMAIN:-dash.example.com}"
         summary_kv "Location" "$APP_DIR"
@@ -119,7 +109,7 @@ demo_overrides() {
     }
     update_summary_ok() {
         summary_reset "Update complete" 1
-        summary_add "{ok}${G_OK}{/} DezerX Spartan was updated (6.0.2 ${G_NEXT} 6.0.3)."
+        summary_add "DezerX Spartan was updated (6.0.2 ${G_NEXT} 6.0.3)."
         summary_add ""
         summary_kv "Dashboard" "https://dash.example.com"
         summary_kv "Backups in" "$BACKUP_DIR"
@@ -130,7 +120,7 @@ demo_overrides() {
         plan_add remove "Removing DezerX Spartan" 60 demo_ph_services
         plan_run
         summary_reset "Uninstalled" 1
-        summary_add "{ok}${G_OK}{/} (demo) Nothing was removed."
+        summary_add "(demo) Nothing was removed."
         summary_show
     }
     health_collect() {

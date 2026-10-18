@@ -1,12 +1,7 @@
-# shellcheck shell=bash
-# Line-by-line prompts. Used when the terminal is too small for the
-# full-screen interface or --plain was given. Same return codes as the widgets.
-
 UI_FD=1
 
 lp() { printf '%s\n' "$*" >&"$UI_FD"; }
 
-# Colours for line output (empty when not a terminal or --no-color).
 L_B="" L_D="" L_A="" L_OK="" L_W="" L_E="" L_R=""
 
 line_styles_init() {
@@ -21,7 +16,6 @@ line_styles_init() {
     fi
 }
 
-# line_text <tagged text> - prints dialog text without the full-screen frame.
 line_text() {
     local text="${1//\\n/$'\n'}" line
     text_wrap 76 "$text"
@@ -39,7 +33,6 @@ line_text() {
 
 line_title() { printf '\n%s%s%s\n' "$L_A" "$1" "$L_R" >&"$UI_FD"; }
 
-# line_read <prompt> [silent] - reads one line from the terminal into UI_RESULT.
 line_read() {
     local prompt="$1" silent="${2:-0}" v=""
     printf '%s' "$prompt" >&"$UI_FD"

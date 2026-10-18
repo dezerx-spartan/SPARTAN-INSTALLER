@@ -1,7 +1,3 @@
-# shellcheck shell=bash
-# Clock synchronisation. A wrong clock breaks TLS (Let's Encrypt, the license
-# API) with confusing certificate errors.
-
 time_sync() {
     if in_container; then
         echo "Container: the clock belongs to the host, skipping."

@@ -1,8 +1,3 @@
-# shellcheck shell=bash
-# File ownership and permissions, and which user the web stack runs as.
-
-# Sets APP_USER/APP_GROUP from nginx.conf's "user" directive, the running
-# Nginx workers, or the usual names (1.x detection order).
 detect_web_user_group() {
     local user="" group="" method=""
     if [[ -f /etc/nginx/nginx.conf ]]; then
@@ -29,9 +24,6 @@ detect_web_user_group() {
     log "Web user: ${APP_USER}:${APP_GROUP} (${method})"
 }
 
-# Owner is the web user. Directories and executables 755, other files keep
-# their mode but lose group/other write (1.x made every file 755 and left
-# .env world-readable). storage/ and bootstrap/cache are group-writable.
 apply_permissions() {
     [[ -d "$APP_DIR" ]] || { echo "${APP_DIR} does not exist."; return 1; }
     path_is_protected "$APP_DIR" && { echo "Refusing to change permissions on ${APP_DIR}."; return 1; }

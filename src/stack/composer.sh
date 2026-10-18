@@ -1,6 +1,3 @@
-# shellcheck shell=bash
-# Composer, verified against the checksum getcomposer.org publishes.
-
 composer_bin() { command -v composer 2>/dev/null || echo /usr/local/bin/composer; }
 
 install_composer() {
@@ -23,7 +20,6 @@ install_composer() {
     echo "Composer installed: $(/usr/local/bin/composer --version 2>/dev/null | head -n1)"
 }
 
-# composer_run <args...> - composer as root inside the app directory.
 composer_run() {
     (cd "$APP_DIR" && COMPOSER_ALLOW_SUPERUSER=1 COMPOSER_NO_INTERACTION=1 "$(composer_bin)" "$@")
 }

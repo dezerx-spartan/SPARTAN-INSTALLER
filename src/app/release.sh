@@ -1,6 +1,3 @@
-# shellcheck shell=bash
-# Downloading and unpacking a DezerX Spartan release.
-
 RELEASE_DIR=""
 RELEASE_SRC=""
 RELEASE_VERSION=""
@@ -62,8 +59,6 @@ release_extract() {
     esac
     rm -f "$file"
 
-    # The application root is the directory that holds artisan: the archive root
-    # or one directory down (ignoring stray folders such as __MACOSX).
     RELEASE_SRC=""
     if [[ -f "${RELEASE_DIR}/extract/artisan" ]]; then
         RELEASE_SRC="${RELEASE_DIR}/extract"
@@ -80,8 +75,6 @@ release_extract() {
     echo "Release ${RELEASE_VERSION:-unknown} unpacked."
 }
 
-# Copies the release over the application directory (1.x semantics: release
-# files win, everything else that is already there stays).
 release_deploy() {
     rsync -aI --remove-source-files "${RELEASE_SRC}/" "${APP_DIR}/" || return 1
     [[ -f "${APP_DIR}/composer.json" ]] || { phase_fail "composer.json is missing after deploying the release."; return 1; }

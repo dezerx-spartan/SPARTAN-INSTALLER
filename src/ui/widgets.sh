@@ -1,11 +1,3 @@
-# shellcheck shell=bash
-# Dialog widgets. Each one draws a centred dialog, handles the keyboard and
-# returns:  0 = confirm / next   1 = back / no / Esc   255 = terminal closed
-# The chosen value, where there is one, is left in UI_RESULT.
-#
-# Outside the full-screen mode every widget falls back to the line prompts in
-# ui/line.sh, so callers never need to care which mode is active.
-
 UI_RESULT=""
 UI_WIDTH=74
 UI_WIDTH_SMALL=58
@@ -16,7 +8,6 @@ ui_hint_check() { UI_HINTS="${G_ARROWS} move ${G_DOT} Space toggle ${G_DOT} Ente
 
 UI_IN_QUIT=0
 
-# ui_confirm_quit - asked on Ctrl+C. Exits the program when confirmed.
 ui_confirm_quit() {
     ((UI_IN_QUIT)) && return 0
     local saved_hints="$UI_HINTS" saved_danger="$UI_DANGER" saved_result="$UI_RESULT"
@@ -35,9 +26,6 @@ ui_confirm_quit() {
     return 0
 }
 
-# _ui_choice_dialog <title> <text> <width> <default button> <label>...
-# Text dialog with a row of buttons. UI_RESULT = index of the pressed button.
-# Returns 0 when a button was pressed, 1 on Esc, 255 when the terminal closed.
 _ui_choice_dialog() {
     local title="$1" text="$2" width="$3" active="$4"
     shift 4
@@ -107,13 +95,11 @@ _ui_choice_dialog() {
     done
 }
 
-# ui_msgbox <title> <text> [button label]
 ui_msgbox() {
     [[ "$UI_MODE" == tui ]] || { line_msgbox "$@"; return; }
     _ui_choice_dialog "$1" "$2" "$UI_WIDTH" 0 "${3:-OK}"
 }
 
-# ui_nav <title> <text> [next label] [back label] - wizard page with Back/Next.
 ui_nav() {
     [[ "$UI_MODE" == tui ]] || { line_nav "$@"; return; }
     local next="${3:-Next ${G_NEXT}}" back="${4:-${G_BACK} Back}"
@@ -124,7 +110,6 @@ ui_nav() {
     return 1
 }
 
-# ui_confirm <title> <text> [yes label] [no label] [default: yes|no]
 ui_confirm() {
     [[ "$UI_MODE" == tui ]] || { line_confirm "$@"; return; }
     local yes="${3:-Yes}" no="${4:-No}" def=0
@@ -135,7 +120,6 @@ ui_confirm() {
     [[ "$UI_RESULT" == 0 ]]
 }
 
-# ui_error <title> <text> - red dialog with a single button.
 ui_error() {
     [[ "$UI_MODE" == tui ]] || { line_msgbox "$@"; return; }
     local saved="$UI_DANGER"
@@ -147,14 +131,6 @@ ui_error() {
     return "$rc"
 }
 
-# ---------------------------------------------------------------------------
-# Lists
-# ---------------------------------------------------------------------------
-
-# _ui_list <mode> <title> <text> <default> <tag> <label> <desc|state>...
-#   mode: menu | radio | check
-# Menu and radio return the highlighted tag in UI_RESULT. Checklists return
-# the checked tags separated by spaces.
 _ui_list() {
     local mode="$1" title="$2" text="$3" def="$4"
     shift 4
@@ -271,19 +247,16 @@ _ui_list() {
     done
 }
 
-# ui_menu <title> <text> <default tag> <tag> <label> <description>...
 ui_menu() {
     [[ "$UI_MODE" == tui ]] || { line_menu "$@"; return; }
     _ui_list menu "$@"
 }
 
-# ui_radio <title> <text> <selected tag> <tag> <label> <description>...
 ui_radio() {
     [[ "$UI_MODE" == tui ]] || { line_menu "$@"; return; }
     _ui_list radio "$@"
 }
 
-# ui_checklist <title> <text> <tag> <label> <on|off>...  (UI_CHECK_DESC[i] optional)
 ui_checklist() {
     [[ "$UI_MODE" == tui ]] || { line_checklist "$@"; return; }
     local title="$1" text="$2"

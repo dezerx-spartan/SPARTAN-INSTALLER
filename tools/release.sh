@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
-# Builds dist/ and uploads it as a GitHub release (draft unless --publish).
-#
-# Usage: GITHUB_TOKEN=... tools/release.sh [--publish] [--repo owner/name] [--tag vX.Y.Z]
 
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 version="$(tr -d '[:space:]' <"${root}/VERSION")"
 tag="v${version}"
-repo="dezerx-spartan/SPARTAN-INSTALLER-NEW"
+repo="dezerx-spartan/SPARTAN-INSTALLER"
 draft=true
 
 while (($#)); do
@@ -32,15 +29,12 @@ api() {
 notes="$(awk -v v="## ${version}" '$0 == v { on = 1; next } /^## / && on { exit } on' "${root}/CHANGELOG.md")"
 [[ -n "$notes" ]] || notes="DezerX Spartan Installer ${version}"
 
-# Always start as a draft: "releases/latest" (what the one-liner downloads) must
-# never point at a release whose files are still uploading.
 release="$(api -X POST "https://api.github.com/repos/${repo}/releases" \
     -d "$(jq -n --arg tag "$tag" --arg name "$version" --arg body "$notes" \
         '{tag_name: $tag, name: $name, body: $body, draft: true}')")"
 id="$(jq -r .id <<<"$release")"
 [[ "$id" =~ ^[0-9]+$ ]] || { echo "Creating the release failed: ${release}" >&2; exit 1; }
 
-# The upload service can lag a moment behind a release that was just created.
 for f in spartan_installer.sh spartan_installer.bundle.sh spartan_installer.bundle.sh.sha256; do
     for attempt in 1 2 3 4 5; do
         if api -X POST -H "Content-Type: application/octet-stream" --data-binary @"${root}/dist/${f}" \

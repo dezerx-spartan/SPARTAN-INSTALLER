@@ -1,8 +1,3 @@
-# shellcheck shell=bash
-# Node.js LTS from NodeSource (the frontend build needs a current Node).
-# When NodeSource has nothing for this distribution yet, the distribution's own
-# Node.js is used if it is new enough.
-
 node_major() { node -v 2>/dev/null | sed -nE 's/^v([0-9]+).*/\1/p'; }
 
 nodesource_setup() {
@@ -12,7 +7,6 @@ nodesource_setup() {
         curl -fsSL --retry 3 https://deb.nodesource.com/setup_lts.x -o "$script" || return 1
     else
         curl -fsSL --retry 3 https://rpm.nodesource.com/setup_lts.x -o "$script" || return 1
-        # The distribution's nodejs module would shadow NodeSource's packages.
         if have dnf && dnf module list nodejs 2>/dev/null | grep -qi '^nodejs'; then
             dnf -y module reset nodejs || true
             dnf -y module disable nodejs || true

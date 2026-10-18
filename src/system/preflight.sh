@@ -1,6 +1,3 @@
-# shellcheck shell=bash
-# Read-only checks shown on the welcome screen. Nothing here changes the system.
-
 declare -a PRE_STATE=() PRE_LABEL=() PRE_DETAIL=()
 PRE_BLOCKER=""
 INTERNET_OK=""
@@ -13,7 +10,6 @@ _pre_add() {
     return 0
 }
 
-# port_owner <port> - name of the process listening on a TCP port (empty if free).
 port_owner() {
     have ss || return 0
     ss -H -ltnp "( sport = :$1 )" 2>/dev/null | grep -oE 'users:\(\("[^"]+"' | head -n1 | sed -E 's/users:\(\("//; s/"$//'
@@ -111,7 +107,6 @@ preflight_run() {
     return 0
 }
 
-# preflight_summary - tagged text for the welcome screen.
 preflight_summary() {
     local i out="" icon
     for i in "${!PRE_STATE[@]}"; do

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.0-beta.8
+
+### Changed
+
+- No check marks anywhere: the final screen title, its summary lines, the health check, the DNS status and the line-mode task list print plain text (finished tasks use the blue dot); checkboxes show a dot.
+- Code comments were removed from the sources and the release bundle.
+- The repository moved to dezerx-spartan/SPARTAN-INSTALLER; the bootstrap and bundle download from there.
+
+### Removed
+
+- The docs/ and tests/ folders.
+
 ## 2.0.0-beta.7
 
 ### Changed

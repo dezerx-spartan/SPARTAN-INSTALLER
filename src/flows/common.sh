@@ -1,7 +1,3 @@
-# shellcheck shell=bash
-# Pieces shared by every flow: start-up, the interface lifecycle, the main
-# menu, picking an installation, self tests and the end-of-run summary.
-
 INTERACTIVE=0
 UI_MODE="plain"
 LOCK_FD=""
@@ -78,7 +74,6 @@ ui_stop() {
     [[ "$UI_MODE" == tui ]] && term_leave
 }
 
-# spartan_exit <code> [reason]
 spartan_exit() {
     local code="${1:-0}" reason="${2:-}"
     trap - EXIT HUP TERM INT
@@ -92,7 +87,6 @@ spartan_exit() {
     exit "$code"
 }
 
-# Unexpected exits (a bug, a kill): put the terminal back and say where the log is.
 spartan_on_exit() {
     local code="$1"
     trap - EXIT
@@ -108,9 +102,6 @@ spartan_on_exit() {
     log_close "$code"
 }
 
-# The SSH session dropped. Before any change: just stop. While a plan runs:
-# keep going without a screen (the log has everything), so the server is
-# never left half-updated because a connection died.
 spartan_on_hup() {
     if ((PLAN_RUNNING)); then
         log "Terminal disconnected; continuing without output."
@@ -132,11 +123,6 @@ spartan_on_term() {
     spartan_exit 143
 }
 
-# ---------------------------------------------------------------------------
-# Each menu action starts from the command line choices, not from whatever a
-# previous (abandoned) flow loaded, e.g. an existing install's .env.
-# ---------------------------------------------------------------------------
-
 CHOICE_VARS=(APP_DIR USED_APP_DIR DOMAIN LICENSE_KEY PRODUCT_ID PRODUCT_NAME WEB DB_ENGINE DB_HOST DB_PORT DB_NAME
     DB_USER DB_PASS DB_ROOT_PASS DB_PASS_GENERATED SSL_MODE SSL_EMAIL OCTANE_ENABLED OCTANE_CHOICE OCTANE_PORT
     OCTANE_WORKERS QUEUE_WORKERS KEEP_NGINX KEEP_CSS KEEP_THEMES KEEP_PORTALS KEEP_EMAILS KEEP_FAVICON OVERWRITE
@@ -149,11 +135,6 @@ choices_restore() {
     [[ -n "$CHOICES_SNAPSHOT" ]] || return 0
     eval "$CHOICES_SNAPSHOT"
 }
-
-# ---------------------------------------------------------------------------
-# Wizard engine: screens are functions returning 0 (next) or 1 (back).
-# An optional <screen>_applies function hides a screen when it returns 1.
-# ---------------------------------------------------------------------------
 
 wizard_run() {
     local -a screens=("$@")
@@ -184,10 +165,6 @@ wizard_run() {
     ((i >= n))
 }
 
-# ---------------------------------------------------------------------------
-# Start-up screen and main menu
-# ---------------------------------------------------------------------------
-
 startup_checks() {
     db_server_detect || true
     app_detect || true
@@ -213,10 +190,6 @@ screen_menu() {
     UI_LIST_BACK="" UI_LIST_NEXT=""
     return "$rc"
 }
-
-# ---------------------------------------------------------------------------
-# Choosing an existing installation (update, uninstall, tools)
-# ---------------------------------------------------------------------------
 
 PICK_TITLE="Installation"
 
@@ -247,15 +220,10 @@ screen_pick_install() {
     return 0
 }
 
-# ---------------------------------------------------------------------------
-# Self tests
-# ---------------------------------------------------------------------------
-
 site_scheme() {
     if [[ "$(env_read_value APP_URL)" == https://* ]]; then echo https; else echo http; fi
 }
 
-# Requests the site through the local web server with the right Host/SNI.
 smoke_test() {
     local scheme port code i
     scheme="$(site_scheme)"
@@ -273,11 +241,6 @@ smoke_test() {
     echo "The site answered HTTP ${code:-000}. Check /var/log/nginx/dezerx.app-error.log and ${APP_DIR}/storage/logs/."
     return 1
 }
-
-# ---------------------------------------------------------------------------
-# Summary at the end of a run: a dialog, then the same text on the normal
-# screen so it stays in the scroll-back after the interface closes.
-# ---------------------------------------------------------------------------
 
 summary_reset() {
     SUMMARY_TITLE="$1"
@@ -325,17 +288,15 @@ summary_show() {
     SUMMARY_FINAL_TEXT="$text"
 }
 
-# Printed after the interface has closed.
 summary_print_plain() {
     [[ -n "${SUMMARY_FINAL_TEXT:-}" ]] || return 0
-    local mark="$G_OK" col="$L_OK"
-    ((SUMMARY_OK)) || { mark="$G_FAIL"; col="$L_E"; }
-    printf '\n%s%s %s%s\n' "$col" "$mark" "$(text_strip "$SUMMARY_TITLE")" "$L_R" >&"$UI_FD"
+    local mark="" col="$L_OK"
+    ((SUMMARY_OK)) || { mark="${G_FAIL} "; col="$L_E"; }
+    printf '\n%s%s%s%s\n' "$col" "$mark" "$(text_strip "$SUMMARY_TITLE")" "$L_R" >&"$UI_FD"
     line_text "$SUMMARY_FINAL_TEXT"
     printf '\n' >&"$UI_FD"
 }
 
-# Failure dialog for a plan that stopped.
 show_failure() {
     local title="$1" note="$2" tail
     tail="$(task_fail_tail 12)"

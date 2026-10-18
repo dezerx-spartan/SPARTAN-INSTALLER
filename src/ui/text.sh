@@ -1,14 +1,5 @@
-# shellcheck shell=bash
-# Text layout for dialogs: word wrapping, inline style tags and truncation.
-#
-# Dialog text may contain these tags (they take no space on screen):
-#   {b} bold   {d} muted   {a} accent   {ok} green   {w} yellow   {e} red   {/} normal
-# Untrusted strings (API messages, file contents) go through tx first so they
-# cannot inject tags.
-
 declare -a WRAP_LINES=()
 
-# tx <string> - neutralises tag braces in text that did not come from us.
 tx() {
     local s="$1"
     s="${s//\{/(}"
@@ -16,7 +7,6 @@ tx() {
     printf '%s' "$s"
 }
 
-# text_strip <string> - prints the string without tags.
 text_strip() {
     local v="$1"
     v="${v//\{b\}/}"
@@ -29,7 +19,6 @@ text_strip() {
     printf '%s' "$v"
 }
 
-# text_vlen <string> - visible length (tags excluded). Result in TEXT_VLEN.
 text_vlen() {
     local v="$1"
     v="${v//\{b\}/}"
@@ -42,8 +31,6 @@ text_vlen() {
     TEXT_VLEN=${#v}
 }
 
-# text_render <tagged line> <base style> - converts tags to escape sequences.
-# Result in TEXT_OUT.
 text_render() {
     local s="$1" base="$2"
     s="${s//\{b\}/$T_B}"
@@ -56,7 +43,6 @@ text_render() {
     TEXT_OUT="${base}${s}${base}"
 }
 
-# text_trunc <plain string> <width> - shortens with an ellipsis. Result in TEXT_OUT.
 text_trunc() {
     local s="$1" w="$2"
     if ((${#s} <= w)); then
@@ -68,7 +54,6 @@ text_trunc() {
     fi
 }
 
-# text_trunc_left <plain string> <width> - keeps the end ("…/var/www/spartan").
 text_trunc_left() {
     local s="$1" w="$2"
     if ((${#s} <= w)); then
@@ -78,9 +63,6 @@ text_trunc_left() {
     fi
 }
 
-# text_wrap <width> <text> - wraps tagged text into WRAP_LINES.
-# Leading spaces are kept, and list items ("- ", "* ", "1. ") get a hanging
-# indent so continuation lines line up with the item text.
 text_wrap() {
     local width="$1" text="$2"
     WRAP_LINES=()
@@ -103,8 +85,6 @@ text_wrap() {
 
         local line="$lead" linelen=${#lead} open="" word wl
         local -a words
-        # Split on single spaces with a non-whitespace IFS, so runs of spaces
-        # (column alignment) survive as empty words.
         IFS=$'\x1f' read -ra words <<<"${body// /$'\x1f'}"
         local first=1
         for word in "${words[@]}"; do
@@ -116,7 +96,6 @@ text_wrap() {
                 linelen=${#hang}
                 first=1
             fi
-            # A single word longer than the line is split hard (paths, URLs).
             if ((wl > width - ${#hang})) && [[ "$word" != *"{"* ]]; then
                 while ((wl > width - ${#hang})); do
                     local room=$((width - linelen - (first ? 0 : 1)))
@@ -139,7 +118,6 @@ text_wrap() {
                 linelen=$((linelen + 1 + wl))
             fi
             first=0
-            # Remember the style that is still open so the next line continues it.
             if [[ "$word" == *"{"* ]]; then
                 local t="${word##*\{}"
                 t="${t%%\}*}"

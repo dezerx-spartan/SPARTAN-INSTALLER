@@ -1,14 +1,5 @@
-# shellcheck shell=bash
-# Updating an installation: wizard, plan and automatic rollback.
-#
-# Nothing is touched until the review screen is confirmed. From then on:
-# maintenance mode -> backups -> download -> swap the code -> upgrade the stack
-# -> migrate and build -> services -> maintenance off. If anything fails after
-# the code was swapped, every backup is restored automatically.
-
 UPDATE_LICENSE_CHECKED=0
 
-# Worker counts already configured on this install win over recommendations.
 workers_defaults_from_env() {
     local q o
     q="$(env_read_value QUEUE_WORKERS)"
@@ -21,7 +12,6 @@ workers_defaults_from_env() {
     fi
 }
 
-# Loads everything the update needs from the installation in APP_DIR.
 update_load_install() {
     app_get_var || return 1
     nginx_layout_detect
@@ -31,10 +21,6 @@ update_load_install() {
     workers_defaults_from_env
     return 0
 }
-
-# ---------------------------------------------------------------------------
-# Screens
-# ---------------------------------------------------------------------------
 
 scr_update_pick() {
     PICK_TITLE="Update"
@@ -119,10 +105,6 @@ update_review_text() {
 
 scr_update_review() { ui_nav "Review" "$(update_review_text)" "Update ${G_NEXT}"; }
 
-# ---------------------------------------------------------------------------
-# Plan
-# ---------------------------------------------------------------------------
-
 up_backup() {
     task "Preparing ${BACKUP_DIR}" backup_prepare_dir || return 1
     task "Checking free disk space" backup_check_space || return 1
@@ -142,8 +124,6 @@ up_backup() {
 up_download() { download_release; }
 
 up_deploy() {
-    # jq is guaranteed only after "Preparing the system"; read the keep flags
-    # again unless the wizard already set them (command line flags still win).
     ((${UPDATE_SAVE_KEEP:-0})) || opts_load_keep
     UPDATE_TOUCHED=1
     task "Setting aside excluded files" opts_stage_exclusions || return 1
@@ -274,7 +254,7 @@ update_summary_ok() {
     scheme="$(site_scheme)"
     summary_reset "Update complete" 1
     local from="${INSTALLED_VERSION:-?}" to="${RELEASE_VERSION:-${AVAILABLE_VERSION:-?}}"
-    summary_add "{ok}${G_OK}{/} DezerX Spartan was updated (${from} ${G_NEXT} ${to})."
+    summary_add "DezerX Spartan was updated (${from} ${G_NEXT} ${to})."
     summary_add ""
     summary_kv "Dashboard" "${scheme}://${DOMAIN}"
     summary_kv "Location" "$APP_DIR"
@@ -304,7 +284,7 @@ update_run() {
         [[ -n "$tail" ]] && summary_add "\n{d}Last output:{/}\n$(tx "$tail" | sed 's/^/  /')"
         summary_add ""
         if [[ "$UPDATE_ROLLED_BACK" == ok ]]; then
-            summary_add "{ok}${G_OK}{/} The previous version was restored from the backup and the site is back online."
+            summary_add "The previous version was restored from the backup and the site is back online."
         else
             summary_add "{e}${G_FAIL}{/} The automatic restore did not finish. Restore by hand:"
             summary_add "  tar -xzf ${APP_BACKUP_FILE} -C $(dirname "$APP_DIR")"
@@ -323,10 +303,6 @@ update_run() {
     summary_show
     return 1
 }
-
-# ---------------------------------------------------------------------------
-# Entry points
-# ---------------------------------------------------------------------------
 
 flow_update() {
     UPDATE_SAVE_KEEP=0

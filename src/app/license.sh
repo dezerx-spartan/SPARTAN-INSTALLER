@@ -1,6 +1,3 @@
-# shellcheck shell=bash
-# License keys and the DezerX market API (verify + one-time download link).
-
 LICENSE_MSG=""
 DL_URL=""
 DL_NAME=""
@@ -16,8 +13,6 @@ license_product_name() {
     esac
 }
 
-# license_apply_key <key> - sets LICENSE_KEY, PRODUCT_ID and PRODUCT_NAME from
-# the key prefix. Fails for keys that are not Spartan keys.
 license_apply_key() {
     local key
     key="$(trim "$1")"
@@ -33,8 +28,6 @@ license_apply_key() {
     return 0
 }
 
-# license_masked [key] - "SPARTANPROFESSIONAL_...A1B2" (the product part is not secret).
-# shellcheck disable=SC2120
 license_masked() {
     local k="${1:-$LICENSE_KEY}"
     [[ -n "$k" ]] || return 0
@@ -43,11 +36,9 @@ license_masked() {
     printf '%s%s%s' "$prefix" "$G_ELLIPSIS" "${k: -4}"
 }
 
-# _license_call <GET|POST> <url> <response file> - prints the HTTP status.
 _license_call() {
     local method="$1" url="$2" out="$3" ipopt code
     ipopt="$(license_curl_ip_opt)"
-    # The key travels in a header read from a private file, not on the command line.
     local hdr="${RUN_DIR}/license.headers"
     (
         umask 077
@@ -60,8 +51,6 @@ _license_call() {
     printf '%s' "${code:-000}"
 }
 
-# license_verify - checks the key for DOMAIN. Sets LICENSE_MSG on failure and
-# LICENSE_DOMAIN / AVAILABLE_VERSION on success.
 license_verify() {
     LICENSE_MSG=""
     local resp="${RUN_DIR}/license-verify.json" code

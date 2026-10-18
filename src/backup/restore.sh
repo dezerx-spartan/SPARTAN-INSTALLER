@@ -1,11 +1,3 @@
-# shellcheck shell=bash
-# Rollback after a failed update: files, database and configuration go back to
-# the backup taken at the start of the update.
-#
-# The application backup contains vendor/ and the built assets, so nothing is
-# rebuilt: 1.x ran composer, npm and the build again during a rollback, which
-# was slow and failed for the same reasons the update had failed.
-
 restore_app_backup() {
     [[ -n "$APP_BACKUP_FILE" && -f "$APP_BACKUP_FILE" ]] || { echo "No application backup."; return 1; }
     path_is_protected "$APP_DIR" && { echo "Refusing to restore into ${APP_DIR}."; return 1; }
@@ -31,7 +23,6 @@ restore_configs() {
         install -m 644 "$NGINX_BACKUP_FILE" "$NGINX_RESTORE_PATH"
         if [[ "$NGINX_MODE" == debian ]]; then
             ln -sf "$NGINX_RESTORE_PATH" "/etc/nginx/sites-enabled/$(basename "$NGINX_RESTORE_PATH")"
-            # The update may have written spartan.conf next to a restored dezerx.conf.
             if [[ "$NGINX_RESTORE_PATH" != "$NGINX_CONF_PATH" ]]; then
                 rm -f "$NGINX_CONF_PATH" "/etc/nginx/sites-enabled/spartan.conf"
             fi
@@ -70,8 +61,6 @@ rollback_phase_verify() {
     return 0
 }
 
-# run_rollback - restores everything from this run's backups. Further Ctrl+C
-# presses are ignored: an interrupted rollback is worse than a slow one.
 run_rollback() {
     rm -f "$ABORT_FILE"
     trap '' INT

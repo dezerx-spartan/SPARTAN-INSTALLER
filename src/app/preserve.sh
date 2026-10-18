@@ -1,20 +1,9 @@
-# shellcheck shell=bash
-# Updating in place: the user's data and customisations are moved aside, the
-# old version is removed, the new release is deployed and everything is put
-# back. Same rules as 1.x:
-#   - storage/, public/, .env and modules_statuses.json always survive
-#   - Modules, client themes: user-added ones are restored, ones that ship with
-#     the new release keep the new version
-#   - CSS, portals, e-mail templates, favicon: kept when selected
-# Moving (not copying) keeps this fast even with gigabytes in storage/.
-
 preserve_begin() {
     update_tmpdir="$(mktemp -d "${APP_DIR}/.cleanup.XXXXXX")" || return 1
     chmod 700 "$update_tmpdir"
     css_save_methode=""
 }
 
-# _mv_into <source> <target dir> - moves a path if it exists.
 _mv_into() {
     [[ -e "$1" || -L "$1" ]] || return 0
     mkdir -p "$2" && mv -- "$1" "$2/"
@@ -85,7 +74,6 @@ preserve_core() {
     echo "storage, public, Modules, modules_statuses.json and .env set aside."
 }
 
-# Removes everything in the application directory except the staging folder.
 app_dir_cleanup() {
     path_is_protected "$APP_DIR" && { phase_fail "Refusing to clean ${APP_DIR}."; return 1; }
     local e n=0
@@ -122,8 +110,6 @@ restore_portals_emails() {
     return 0
 }
 
-# User modules that the new release does not ship are put back, sorted into
-# their category folder by name suffix (Gateway/Service/Provider/Addon).
 restore_modules() {
     local saved="${update_tmpdir}/Modules" dest="${APP_DIR}/Modules"
     [[ -d "$saved" ]] || { echo "No saved modules."; return 0; }
@@ -151,8 +137,6 @@ restore_modules() {
     rm -rf -- "$saved"
 }
 
-# Client themes: same rule as modules. Runs before the frontend build because
-# Vite only bundles the themes it can see.
 restore_themes() {
     local saved="${update_tmpdir}/Themes" dest="${APP_DIR}/resources/js/pages/themes"
     [[ -d "$saved" ]] || { echo "No saved client themes."; return 0; }
@@ -187,8 +171,6 @@ restore_files() {
     return 0
 }
 
-# modules_statuses.json: the user's on/off choices win, new modules get the
-# release default.
 merge_module_statuses() {
     local old="${APP_DIR}/modules_statuses.json.old" new="${APP_DIR}/modules_statuses.json"
     [[ -f "$old" ]] || return 0

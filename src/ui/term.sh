@@ -1,7 +1,3 @@
-# shellcheck shell=bash
-# Terminal control for the full-screen interface: size, raw keyboard input,
-# alternate screen and restoring the user's terminal on every exit path.
-
 TTY_FD=""
 TERM_ROWS=24
 TERM_COLS=80
@@ -29,8 +25,6 @@ term_size() {
 term_enter() {
     term_open || return 1
     TERM_STTY="$(stty -g <&"$TTY_FD" 2>/dev/null)"
-    # No echo, keys arrive one at a time, Ctrl+C/Ctrl+Z/Ctrl+S reach us as
-    # plain bytes instead of signals (the installer decides what they mean).
     stty -echo -icanon -isig -ixon -icrnl min 1 time 0 <&"$TTY_FD" 2>/dev/null
     printf '\e[?1049h\e[?25l\e[?7l\e[H' >&"$TTY_FD"
     TERM_ACTIVE=1
@@ -46,7 +40,6 @@ term_leave() {
     trap - WINCH
 }
 
-# Temporarily hand the terminal back (cooked mode, normal screen).
 term_suspend() {
     ((TERM_ACTIVE)) || return 0
     printf '\e[0m\e[?7h\e[?25h\e[?1049l' >&"$TTY_FD"
@@ -60,14 +53,8 @@ term_resume() {
     term_size
 }
 
-# Keys are read with plain timed reads (no -n/-s/-d): bash switches the
-# terminal into its own one-character mode for those, and that mode turns
-# signal keys back on, so Ctrl+C would kill the installer instead of asking.
-# A timed read keeps whatever arrived when it times out, so bytes are collected
-# into TERM_INBUF and split into keys here.
 TERM_INBUF=""
 
-# _term_fill [timeout] - appends pending input to TERM_INBUF. Returns 1 on EOF.
 _term_fill() {
     local chunk="" rc
     IFS= read -r -t "${1:-0.05}" chunk <&"$TTY_FD"
@@ -78,9 +65,6 @@ _term_fill() {
     return 0
 }
 
-# term_read_key - waits for one key press and sets KEY to a name:
-#   UP DOWN LEFT RIGHT HOME END PGUP PGDN DEL TAB BTAB ENTER ESC SPACE BACKSPACE
-#   CTRL_C CTRL_U CTRL_W CTRL_L RESIZE IGNORE EOF CHAR (KEY_CHAR holds it)
 term_read_key() {
     KEY=""
     KEY_CHAR=""
@@ -96,7 +80,6 @@ term_read_key() {
 
     local k="${TERM_INBUF:0:1}"
     if [[ "$k" == $'\e' ]]; then
-        # A lone Esc, or the start of a sequence that may still be arriving.
         [[ ${#TERM_INBUF} -eq 1 ]] && _term_fill 0.03
         local rest="${TERM_INBUF:1}" seq=""
         if [[ -z "$rest" ]]; then
@@ -112,7 +95,6 @@ term_read_key() {
             done
             seq="${rest:0:i+1}"
         else
-            # Alt+key arrives as Esc followed by the key: treat it as the key.
             TERM_INBUF="$rest"
             KEY="IGNORE"
             return 0

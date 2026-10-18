@@ -1,12 +1,3 @@
-# shellcheck shell=bash
-# Plans: an ordered list of phases (shown as rows in the progress view).
-# A phase function returns 0 when done, 3 when it had nothing to do, and
-# anything else to stop the plan. warn_add during a phase marks it with "!".
-#
-#   plan_new "Installing DezerX Spartan"
-#   plan_add php "Installing PHP 8.4" 14 phase_php
-#   plan_run || handle_failure
-
 declare -a PLAN_FUNCS=()
 PLAN_FAILED_INDEX=-1
 PLAN_FAILED_LABEL=""
@@ -23,7 +14,6 @@ plan_new() {
     PLAN_ABORTED=0
 }
 
-# plan_add <id> <label> <weight> <function>
 plan_add() {
     progress_add "$1" "$2" "$3"
     PLAN_FUNCS+=("$4")
@@ -87,15 +77,12 @@ plan_run() {
 
 PHASE_FAIL_MSG=""
 
-# phase_fail <message> - explains why a phase stops; returns 1 for chaining:
-#   [[ -f composer.json ]] || { phase_fail "The download is not a Spartan release."; return 1; }
 phase_fail() {
     PHASE_FAIL_MSG="$1"
     log "ERROR: $1"
     return 1
 }
 
-# plan_fail_reason - one paragraph describing what went wrong.
 plan_fail_reason() {
     if ((PLAN_ABORTED)); then
         printf 'Stopped on request during: %s' "${PLAN_FAILED_LABEL:-the run}"

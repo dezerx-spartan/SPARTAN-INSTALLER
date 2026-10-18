@@ -1,14 +1,7 @@
-# shellcheck shell=bash
-# ionCube loader (DezerX Spartan is ionCube-encoded and will not run without it).
-
 ioncube_installed_version() {
     php -r 'echo function_exists("ioncube_loader_version") ? ioncube_loader_version() : "0";' 2>/dev/null || echo 0
 }
 
-# ioncube_fetch <url> <out> - normal TLS first. If (and only if) the download
-# fails because downloads.ioncube.com serves an expired certificate (it has
-# happened), retry with the server's public key pinned: the host identity is
-# still verified, only the expiry date is ignored.
 ioncube_fetch() {
     local url="$1" out="$2" host="downloads.ioncube.com" err pin
     curl -fsSL --connect-timeout 15 --retry 2 "$url" -o "$out" && return 0

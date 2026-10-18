@@ -1,7 +1,3 @@
-# shellcheck shell=bash
-# The Laravel scheduler in root's crontab (1.x layout; Spartan's own updater
-# runs from here and needs root).
-
 cron_line() {
     printf '* * * * * cd %s && PHP_INI_SCAN_DIR=:%s nice -n 10 php artisan schedule:run >> /dev/null 2>&1' "$APP_DIR" "$PHP_CRON_INI_DIR"
 }

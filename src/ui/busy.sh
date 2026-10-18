@@ -1,12 +1,3 @@
-# shellcheck shell=bash
-# The ticker: a background process that animates spinners and timers while the
-# installer runs a command in the foreground. Running the work in the
-# foreground keeps every variable it sets; the ticker only reads.
-#
-# While the full-screen interface is up, the ticker also reads the keyboard
-# (that doubles as its sleep), so Ctrl+C during the work is seen right away:
-# the first press asks to stop after the current step, the second stops now.
-
 TICKER_PID=""
 TASK_STATE_FILE=""
 ABORT_FILE=""
@@ -17,7 +8,6 @@ ticker_files_init() {
     : >"$TASK_STATE_FILE"
 }
 
-# task_state_write <start epoch> <description> <output file>
 task_state_write() {
     [[ -n "$TASK_STATE_FILE" ]] || return 0
     printf '%s\t%s\t%s\n' "$1" "$2" "$3" >"$TASK_STATE_FILE"
@@ -38,7 +28,6 @@ _ticker_ctrl_c() {
     fi
 }
 
-# ticker_start <render function> - render is called with a frame counter ~10x/s.
 ticker_start() {
     ticker_stop
     local fn="$1"
@@ -57,8 +46,6 @@ ticker_start() {
             "$fn" "$frame"
             frame=$((frame + 1))
             if [[ "$UI_MODE" == tui && -n "$TTY_FD" ]]; then
-                # Doubles as the sleep. Keys typed meanwhile are consumed;
-                # Ctrl+C arrives as a byte because the terminal has signals off.
                 k=""
                 IFS= read -r -t 0.1 k <&"$TTY_FD" 2>/dev/null
                 [[ "$k" == *$'\x03'* ]] && _ticker_ctrl_c
@@ -77,8 +64,6 @@ ticker_stop() {
     TICKER_PID=""
 }
 
-# Last line of a command's output, cleaned for display (no colours or
-# carriage-return progress frames). Result in TICK_LAST.
 tick_last_line() {
     TICK_LAST=""
     [[ -s "$1" ]] || return 0
@@ -87,10 +72,6 @@ tick_last_line() {
         NF { last = $0 }
         END { sub(/^[ ]+/, "", last); print last }')"
 }
-
-# ---------------------------------------------------------------------------
-# ui_busy <message> <command...> - short checks inside the wizard.
-# ---------------------------------------------------------------------------
 
 BUSY_MSG=""
 BUSY_ROW=0
@@ -146,14 +127,13 @@ ui_busy() {
     rc=$?
     ticker_stop
     log_file "$out"
-    # Ctrl+C pressed during the check: ask about quitting once it is done.
     if [[ "$UI_MODE" == tui ]] && ((!PLAN_RUNNING)) && abort_requested; then
         rm -f "$ABORT_FILE"
         ui_confirm_quit
     fi
     if [[ "$UI_MODE" == line ]]; then
         if ((rc == 0)); then
-            printf '\r\e[K  %s%s%s %s\n' "$L_OK" "$G_OK" "$L_R" "$BUSY_MSG" >&"$UI_FD"
+            printf '\r\e[K  %s%s%s %s\n' "$L_A" "$G_DONE" "$L_R" "$BUSY_MSG" >&"$UI_FD"
         else
             printf '\r\e[K  %s%s%s %s\n' "$L_E" "$G_FAIL" "$L_R" "$BUSY_MSG" >&"$UI_FD"
         fi

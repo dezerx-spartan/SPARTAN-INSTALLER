@@ -1,6 +1,3 @@
-# shellcheck shell=bash
-# Tools for an existing installation (the 1.x "debug" menu, extended).
-
 flow_tools() {
     while :; do
         UI_STEP=""
@@ -25,10 +22,6 @@ flow_tools() {
     done
 }
 
-# ---------------------------------------------------------------------------
-# Repair permissions (1.x "setup perms")
-# ---------------------------------------------------------------------------
-
 tp_run() {
     detect_web_user_group
     task "Setting ownership and permissions" apply_permissions || return 1
@@ -44,7 +37,7 @@ tool_perms_run() {
     plan_add perms "Repairing permissions" 100 tp_run
     if plan_run; then
         summary_reset "Permissions repaired" 1
-        summary_add "{ok}${G_OK}{/} $(tx "$APP_DIR") is owned by ${APP_USER}:${APP_GROUP}."
+        summary_add "$(tx "$APP_DIR") is owned by ${APP_USER}:${APP_GROUP}."
     else
         show_failure "Repair failed" ""
     fi
@@ -57,10 +50,6 @@ tool_perms() {
     ui_confirm "Repair permissions" "Set the owner of {b}$(tx "$APP_DIR"){/} to the web server user, fix file modes and restart the workers?" "Repair" "${G_BACK} Back" yes || return 1
     tool_perms_run
 }
-
-# ---------------------------------------------------------------------------
-# SSL certificate
-# ---------------------------------------------------------------------------
 
 ts_run() {
     detect_web_user_group
@@ -83,7 +72,7 @@ tool_ssl_run() {
     plan_add ssl "Issuing the certificate" 90 ts_run
     if plan_run && [[ "$SSL_RESULT" == ok ]]; then
         summary_reset "SSL enabled" 1
-        summary_add "{ok}${G_OK}{/} https://$(tx "$DOMAIN") is live."
+        summary_add "https://$(tx "$DOMAIN") is live."
         summary_kv "Certificate" "$CERT_DIR"
     else
         [[ -z "$PHASE_FAIL_MSG" && "${#WARNINGS[@]}" -gt 0 ]] && PHASE_FAIL_MSG="${WARNINGS[-1]}"
@@ -107,10 +96,6 @@ tool_ssl() {
     tool_ssl_run
 }
 
-# ---------------------------------------------------------------------------
-# Restart services
-# ---------------------------------------------------------------------------
-
 tr_run() {
     local svc
     svc="$(php_fpm_service)"
@@ -129,23 +114,19 @@ tool_restart() {
     plan_add restart "Restarting services" 100 tr_run
     if plan_run; then
         summary_reset "Services restarted" 1
-        summary_add "{ok}${G_OK}{/} All DezerX Spartan services were restarted."
+        summary_add "All DezerX Spartan services were restarted."
     else
         show_failure "Restart failed" ""
     fi
     summary_show
 }
 
-# ---------------------------------------------------------------------------
-# Health check
-# ---------------------------------------------------------------------------
-
 declare -a HEALTH_ROWS=()
 
 _health_row() {
     local icon
     case "$1" in
-        ok) icon="{ok}${G_OK}{/}" ;;
+        ok) icon="{a}${G_DONE}{/}" ;;
         warn) icon="{w}${G_WARN}{/}" ;;
         *) icon="{e}${G_FAIL}{/}" ;;
     esac
@@ -215,11 +196,6 @@ tool_health() {
     return 1
 }
 
-# ---------------------------------------------------------------------------
-# Support bundle (replaces 1.x "upload logs", which never worked). Written
-# locally; nothing is uploaded.
-# ---------------------------------------------------------------------------
-
 BUNDLE_FILE=""
 
 _redact_env() {
@@ -274,7 +250,7 @@ tool_bundle_run() {
     plan_add bundle "Collecting diagnostics" 100 tb_run
     if plan_run; then
         summary_reset "Support bundle ready" 1
-        summary_add "{ok}${G_OK}{/} Saved to {b}${BUNDLE_FILE}{/}"
+        summary_add "Saved to {b}${BUNDLE_FILE}{/}"
         summary_add "Passwords, keys and tokens in .env are replaced with ****. Review the archive before sharing it."
     else
         show_failure "Support bundle failed" ""
@@ -289,10 +265,6 @@ tool_bundle() {
     fi
     tool_bundle_run
 }
-
-# ---------------------------------------------------------------------------
-# Non-interactive variants
-# ---------------------------------------------------------------------------
 
 tool_pick_noninteractive() {
     app_looks_like_spartan "$APP_DIR" && return 0

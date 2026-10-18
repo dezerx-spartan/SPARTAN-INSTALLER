@@ -1,17 +1,7 @@
-# shellcheck shell=bash
-# Networking: public IP and DNS checks for the domain, and the IPv6 setting.
-#
-# Like 1.x, IPv6 is disabled system-wide unless --ipv6 is given (license checks
-# are bound to the server's IPv4 address). Unlike 1.x it is never disabled on
-# an IPv6-only server, never while someone is connected over IPv6 SSH (that
-# would cut the session and kill the installer), and never while other Nginx
-# sites listen on IPv6 (Nginx would fail to start).
-
 IPV6_SYSCTL="/etc/sysctl.d/99-spartan-disable-ipv6.conf"
 
 net_has_ipv4_route() { ip -4 route show default 2>/dev/null | grep -q .; }
 
-# True when an established SSH session uses IPv6 (ours or anyone's).
 net_ipv6_ssh_sessions() {
     have ss || return 1
     local ports
@@ -31,7 +21,6 @@ net_other_ipv6_listeners() {
         grep -vE "/(spartan|dezerx)(\.conf)?$|spartan-octane\.conf$" | grep -q .
 }
 
-# curl options for calls that must leave over IPv4 (license API).
 license_curl_ip_opt() {
     if ((ENABLE_IPV6 == 0)) && net_has_ipv4_route; then
         printf '%s' "-4"
@@ -73,10 +62,6 @@ config_network() {
     echo "IPv6 disabled."
 }
 
-# ---------------------------------------------------------------------------
-# Public IP and DNS
-# ---------------------------------------------------------------------------
-
 net_detect_public_ip() {
     [[ -n "$PUBLIC_IPV4" ]] && return 0
     have curl || return 1
@@ -117,7 +102,6 @@ ip4_is_cloudflare() {
     return 1
 }
 
-# dns_check <domain> - sets DNS_STATUS: ok | mismatch | proxied | unresolved | ip | unknown
 dns_check() {
     local domain="$1" ip
     DNS_RESOLVED=""
@@ -143,7 +127,6 @@ dns_check() {
     for ip in $DNS_RESOLVED; do
         ip4_is_cloudflare "$ip" && { DNS_STATUS="proxied"; return 0; }
     done
-    # A private address on this machine (1:1 NAT clouds) also counts.
     for ip in $DNS_RESOLVED; do
         ip -4 addr show 2>/dev/null | grep -q "inet ${ip}/" && { DNS_STATUS="ok"; return 0; }
     done
@@ -151,11 +134,10 @@ dns_check() {
     return 0
 }
 
-# dns_status_text - one tagged line describing DNS_STATUS for the wizard.
 dns_status_text() {
     local d="$1"
     case "$DNS_STATUS" in
-        ok) printf '{ok}%s{/} %s points to this server (%s).' "$G_OK" "$d" "${PUBLIC_IPV4:-$DNS_RESOLVED}" ;;
+        ok) printf '%s points to this server (%s).' "$d" "${PUBLIC_IPV4:-$DNS_RESOLVED}" ;;
         proxied) printf '{w}%s{/} %s is proxied through Cloudflare (%s).' "$G_WARN" "$d" "$DNS_RESOLVED" ;;
         mismatch) printf '{w}%s{/} %s points to %s, but this server is %s.' "$G_WARN" "$d" "$DNS_RESOLVED" "$PUBLIC_IPV4" ;;
         unresolved) printf '{w}%s{/} %s does not resolve yet.' "$G_WARN" "$d" ;;

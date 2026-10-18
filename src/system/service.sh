@@ -1,12 +1,8 @@
-# shellcheck shell=bash
-# systemd helpers (with the 1.x fallbacks for rc-service and service).
-
 is_systemd() {
     [[ -d /run/systemd/system ]] && return 0
     [[ "$(ps -p 1 -o comm= 2>/dev/null)" == systemd ]]
 }
 
-# svc_exists <name> - a unit file for <name>.service is known to systemd.
 svc_exists() {
     local u="${1%.service}.service"
     systemctl list-unit-files --no-legend "$u" 2>/dev/null | grep -q . && return 0
@@ -28,7 +24,6 @@ svc_reload_or_restart() {
     systemctl reload "$1" 2>/dev/null || systemctl restart "$1"
 }
 
-# start_service <name> - enable and start, falling back to other init tools.
 start_service() {
     local svc="$1"
     if is_systemd && have systemctl; then
@@ -44,7 +39,6 @@ start_service() {
     return 1
 }
 
-# Fails when <unit> is not active after a short wait (units that fork take a moment).
 svc_wait_active() {
     local unit="$1" tries="${2:-10}" i
     for ((i = 0; i < tries; i++)); do

@@ -1,13 +1,3 @@
-# shellcheck shell=bash
-# task: runs one unit of work with a spinner, sends its output to the log and
-# remembers the output of the last failure for the error screen.
-#
-#   task "Installing PHP 8.4 packages" pkg_install php8.4-fpm php8.4-cli
-#
-# Commands and shell functions both work. Functions run in this shell, so
-# the variables they set survive. A task started from inside another task just
-# runs (and updates the description shown under the spinner).
-
 TASK_DEPTH=0
 TASK_SEQ=0
 TASK_OUT=""
@@ -74,8 +64,6 @@ task() {
     return "$rc"
 }
 
-# task_try <description> <command...> - like task, but a failure only adds a
-# warning instead of failing the phase.
 task_try() {
     local desc="$1"
     task "$@" && return 0
@@ -85,14 +73,12 @@ task_try() {
     return 0
 }
 
-# say <message> - a status line in the run log (and in line/plain output).
 say() {
     log "$*"
     [[ "$UI_MODE" == plain ]] && lp "  $*"
     return 0
 }
 
-# task_fail_tail [lines] - last lines of the failed command's output (masked).
 task_fail_tail() {
     local n="${1:-14}"
     [[ -n "$TASK_FAIL_OUT" && -s "$TASK_FAIL_OUT" ]] || return 0

@@ -1,18 +1,3 @@
-# shellcheck shell=bash
-# Forms: one or more labelled fields edited in place.
-#
-# Callers fill these arrays, then call ui_form <title> <text>:
-#   FORM_LABELS   field labels
-#   FORM_VALUES   initial values (the edited values are left here)
-#   FORM_TYPES    text | password | number | choice
-#   FORM_CHOICES  for choice fields: "First|Second|Third"
-#   FORM_HELP     optional help line shown while the field has focus
-#   FORM_DISABLED optional, 1 = shown dimmed and skipped
-# Optional hooks (function names):
-#   FORM_VALIDATE  checks FORM_VALUES; on error sets FORM_ERROR (and
-#                  FORM_ERROR_FIELD) and returns non-zero
-#   FORM_ON_CHANGE runs after any choice field changes
-
 declare -a FORM_LABELS=() FORM_VALUES=() FORM_TYPES=() FORM_CHOICES=() FORM_HELP=() FORM_DISABLED=()
 FORM_VALIDATE=""
 FORM_ON_CHANGE=""
@@ -27,7 +12,6 @@ form_reset() {
     FORM_ERROR_FIELD=""
 }
 
-# form_add <label> <value> [type] [choices|help] [help]
 form_add() {
     FORM_LABELS+=("$1")
     FORM_VALUES+=("$2")
@@ -233,8 +217,6 @@ ui_form() {
     done
 }
 
-# Runs the validator. On failure it moves the focus (a local of ui_form,
-# reachable through bash's dynamic scoping) to the field that needs fixing.
 _form_submit() {
     [[ -n "$FORM_VALIDATE" ]] || return 0
     FORM_ERROR=""
@@ -248,8 +230,6 @@ _form_submit() {
     return 1
 }
 
-# ui_input <title> <text> <label> <default> [password] [help]
-# Single field form; the value is left in UI_RESULT.
 ui_input() {
     local title="$1" text="$2" label="$3" def="$4" type="${5:-text}" help="${6:-}"
     local saved_validate="${FORM_VALIDATE_INPUT:-}"

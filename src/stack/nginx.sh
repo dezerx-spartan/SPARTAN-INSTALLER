@@ -1,8 +1,3 @@
-# shellcheck shell=bash
-# Nginx: package, layout detection and the Spartan virtual host.
-# The vhost templates are the 1.x ones (same file names, logs, headers, Octane
-# proxy and micro-cache); changes are marked where they fix something.
-
 nginx_version() { nginx -v 2>&1 | sed -nE 's|.*nginx/([0-9.]+).*|\1|p'; }
 
 nginx_layout_detect() {
@@ -22,9 +17,6 @@ nginx_layout_detect() {
     log "Nginx layout: ${NGINX_MODE} (vhost ${NGINX_CONF_PATH})"
 }
 
-# Installs Nginx. An Nginx that is already installed is kept as it is (other
-# sites may depend on its packaging); otherwise the nginx.org mainline
-# repository is used, falling back to the distribution package.
 install_nginx() {
     if have nginx; then
         echo "Nginx $(nginx_version) is already installed; keeping it."
@@ -75,7 +67,6 @@ EOF
     echo "Nginx $(nginx_version) installed."
 }
 
-# Apache on port 80 keeps Nginx from starting (1.x did the same).
 no_apache() {
     local pkg svc sock
     if is_debian_family; then pkg="apache2" svc="apache2.service" sock="apache2.socket"; else pkg="httpd" svc="httpd.service" sock="httpd.socket"; fi
@@ -104,8 +95,6 @@ nginx_enable_site() {
     fi
 }
 
-# Other vhosts claiming the same server_name make Nginx pick one at random;
-# they are disabled (symlinks removed, files renamed) like in 1.x.
 nginx_disable_conflicting_sites() {
     [[ -n "$DOMAIN" ]] || return 0
     local dir="/etc/nginx/conf.d"
@@ -256,7 +245,6 @@ EOF
     fi
 }
 
-# nginx_render_vhost <http|ssl> - prints the Spartan vhost.
 nginx_render_vhost() {
     local mode="$1" app_block perf_block
     app_block="$(nginx_app_location_block)"
@@ -296,7 +284,6 @@ EOF
         return 0
     fi
 
-    # "listen ... http2" is deprecated since nginx 1.25.1 (warning on every reload).
     local listen_443 http2_line=""
     if version_ge "$(nginx_version)" "1.25.1"; then
         listen_443="    listen 443 ssl;"
@@ -312,7 +299,6 @@ server {
 ${listen_80}
     server_name ${DOMAIN};
 
-    # Certificate renewals are answered over HTTP before the redirect.
     location ^~ /.well-known/acme-challenge/ {
         root ${APP_DIR}/public;
         default_type text/plain;
@@ -369,9 +355,6 @@ ${app_block}
 EOF
 }
 
-# configure_nginx <http|ssl> - writes the vhost and reloads Nginx. The new
-# config is tested first; if `nginx -t` fails the previous files are put back
-# and Nginx keeps serving (1.x restarted a broken config and took sites down).
 configure_nginx() {
     local mode="$1"
     nginx_layout_detect
@@ -404,7 +387,6 @@ configure_nginx() {
     fi
 }
 
-# The certificate path an existing vhost uses (1.x vhosts or ours).
 nginx_existing_cert_dir() {
     local f p
     for f in "$NGINX_CONF_OLD_PATH" "$NGINX_CONF_PATH"; do

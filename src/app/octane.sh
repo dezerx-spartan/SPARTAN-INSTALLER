@@ -1,11 +1,7 @@
-# shellcheck shell=bash
-# Laravel Octane on RoadRunner (dezerx-octane.service) behind Nginx.
-
 octane_wanted() { [[ "$OCTANE_ENABLED" == 1 ]]; }
 
 octane_is_installed() { [[ -d "${APP_DIR}/vendor/laravel/octane" && -f "${APP_DIR}/config/octane.php" ]]; }
 
-# Releases from before the Octane safety work would break under Octane.
 octane_code_is_ready() {
     local f
     for f in app/Octane/Runtime.php app/Octane/Listeners/FlushApplicationState.php app/Http/Middleware/EnforceOperationalState.php; do
@@ -60,8 +56,6 @@ recommend_queue_workers() {
     echo "$r"
 }
 
-# The RPC port RoadRunner uses is the HTTP port minus 1999 (Octane's default),
-# so both have to be free.
 pick_octane_port() {
     if [[ -n "$OCTANE_PORT" ]]; then
         echo "$OCTANE_PORT"
@@ -92,7 +86,6 @@ octane_runtime_defaults() {
     [[ "$OCTANE_WORKERS" =~ ^[0-9]+$ ]] || OCTANE_WORKERS="$(recommend_octane_workers)"
 }
 
-# Update wizard: what to do about Octane on an existing install (1.x rules).
 octane_update_default() {
     [[ -n "$OCTANE_CHOICE" ]] && return 0
     local flag
@@ -155,8 +148,6 @@ remove_octane_service() {
     systemctl daemon-reload
 }
 
-# setup_octane - returns 0 also when Octane ends up disabled (the site then
-# runs on PHP-FPM, as in 1.x).
 setup_octane() {
     if ! octane_wanted; then
         env_write_value OCTANE_ENABLED false
@@ -197,7 +188,6 @@ setup_octane() {
     task "Creating the Octane service (${OCTANE_WORKERS} workers on port ${OCTANE_PORT})" setup_systemd_octane
 }
 
-# Any HTTP answer means Octane is up (a missing /up route answers 404).
 wait_for_octane() {
     local i code
     for ((i = 0; i < 20; i++)); do

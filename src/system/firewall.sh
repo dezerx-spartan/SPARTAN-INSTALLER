@@ -1,7 +1,3 @@
-# shellcheck shell=bash
-# Opens HTTP and HTTPS in an active host firewall. Inactive firewalls are left
-# alone, and nothing else is changed (SSH rules stay as they are).
-
 firewall_kind() {
     if have firewall-cmd && firewall-cmd --state >/dev/null 2>&1; then
         echo "firewalld"

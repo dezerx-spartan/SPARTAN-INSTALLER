@@ -1,11 +1,3 @@
-# shellcheck shell=bash
-# The application's .env: reading, writing single keys, the initial file for
-# new installs and the merge with .env.example on updates.
-
-# _env_format <key> <value> - KEY=value with quoting that phpdotenv reads back
-# unchanged. Double quotes as in 1.x; values containing $ are single-quoted
-# instead, because phpdotenv expands ${...} inside double quotes and rejects
-# "\$" as an unknown escape sequence.
 _env_format() {
     local key="$1" v="$2"
     if [[ ! "$v" =~ [^a-zA-Z0-9_./-] ]]; then
@@ -19,7 +11,6 @@ _env_format() {
     fi
 }
 
-# env_write_value <key> <value> [file] - adds or replaces one key, in place.
 env_write_value() {
     local key="$1" value="$2" file="${3:-${APP_DIR}/.env}" line
     line="$(_env_format "$key" "$value")"
@@ -39,7 +30,6 @@ env_write_value() {
     fi
 }
 
-# env_read_value <key> [file] - prints the value with quotes and escapes removed.
 env_read_value() {
     local key="$1" file="${2:-${APP_DIR}/.env}" val
     [[ -f "$file" ]] || return 0
@@ -57,7 +47,6 @@ env_read_value() {
     printf '%s' "$val"
 }
 
-# New installs: .env from .env.example plus the values from the wizard.
 app_env_setup() {
     local env="${APP_DIR}/.env"
     if [[ ! -f "$env" && -f "${APP_DIR}/.env.example" ]]; then
@@ -81,9 +70,6 @@ app_env_setup() {
     env_write_value DB_PASSWORD "$DB_PASS"
 }
 
-# Updates: the existing .env stays exactly as it is (order, comments, custom
-# keys) and keys that are new in .env.example are appended. 1.x rebuilt the
-# file from the template and silently dropped every key the template lacked.
 env_merge() {
     local env="${APP_DIR}/.env" tmpl="${APP_DIR}/.env.example"
     [[ -f "$tmpl" ]] || { echo "No .env.example in the release; .env left untouched."; return 0; }
@@ -103,7 +89,6 @@ env_merge() {
         key="${BASH_REMATCH[1]}"
         [[ -n "${have[$key]:-}" ]] && continue
         have[$key]=1
-        # Cache and queue move to Redis through switch_to_redis_drivers, never by default.
         case "$key" in
             CACHE_STORE | QUEUE_CONNECTION) line="${key}=database" ;;
         esac
@@ -121,7 +106,6 @@ env_merge() {
     echo "Added to .env: ${added[*]}"
 }
 
-# Reads the configuration of an existing installation from its .env.
 app_get_var() {
     local env="${APP_DIR}/.env"
     [[ -f "$env" ]] || { phase_fail "${env} does not exist."; return 1; }
