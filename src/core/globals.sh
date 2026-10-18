@@ -1,0 +1,174 @@
+# shellcheck shell=bash
+# Settings, paths and defaults shared by every module.
+#
+# File locations, unit names and .env keys match the 1.x installer on purpose:
+# servers installed with 1.x are updated in place by this one.
+
+: "${SPARTAN_VERSION:=0.0.0-dev}"
+: "${SPARTAN_RELEASE_REPO:=dezerx-spartan/SPARTAN-INSTALLER-NEW}"
+
+TITLE="DezerX Spartan Installer"
+PRODUCT_LABEL="DezerX Spartan"
+
+# ---------------------------------------------------------------------------
+# Files and directories
+# ---------------------------------------------------------------------------
+LOG="/var/log/spartan_installer.log"
+LOG_MAX_BYTES=$((10 * 1024 * 1024))
+APP_DEFAULT_DIR="/var/www/spartan"
+APP_DIR="$APP_DEFAULT_DIR"
+IONCUBE_DIR="/usr/local/ioncube"
+BACKUP_DIR="/var/backups/spartan"
+LEGACY_BACKUP_DIR="/tmp/spartan"
+BACKUP_KEEP=7
+SELF_SIGNED_BASE="/etc/certs/spartan"
+LETSENCRYPT_LIVE="/etc/letsencrypt/live"
+CERTBOT_DEPLOY_HOOK="/etc/letsencrypt/renewal-hooks/deploy/spartan-reload-nginx.sh"
+RUN_LOCK="/run/spartan-installer.lock"
+WORK_BASE="/var/tmp"
+OPTIONS_JSON_NAME="script_options.json"
+SUPPORT_DIR="/root"
+
+APP_USER_DEFAULT="www-data"
+APP_GROUP_DEFAULT="www-data"
+APP_USER=""
+APP_GROUP=""
+
+# ---------------------------------------------------------------------------
+# Stack
+# ---------------------------------------------------------------------------
+PHP_VER="8.4"           # preferred PHP version
+PHP_MIN_VER="8.2"       # Spartan's composer.json requires ^8.2
+PHP_IONCUBE_MAX="8.4"   # newest PHP we pick automatically (ionCube support lags PHP releases)
+NODE_MIN_MAJOR=20
+
+PHP_PPA_URL="https://ppa.launchpadcontent.net/ondrej/php/ubuntu"
+SURY_PHP_URL="https://packages.sury.org/php"
+NGINX_APT_URL="https://nginx.org/packages/mainline"
+
+LICENSE_API_VERIFY="https://market.dezerx.com/api/license/verify"
+LICENSE_API_DOWNLOAD="https://market.dezerx.com/api/license/download"
+
+# ---------------------------------------------------------------------------
+# Services (unit names are relied upon by Spartan itself; do not rename)
+# ---------------------------------------------------------------------------
+OCTANE_ENABLED=1
+OCTANE_CHOICE=""
+OCTANE_HOST="127.0.0.1"
+OCTANE_PORT=""
+OCTANE_WORKERS=""
+OCTANE_MAX_REQUESTS="10000"
+OCTANE_BLOCK_REASON=""
+OCTANE_SERVICE="/etc/systemd/system/dezerx-octane.service"
+QUEUE_WORKERS=""
+QUEUE_TEMPLATE="/etc/systemd/system/dezerx-queue@.service"
+QUEUE_TARGET="/etc/systemd/system/dezerx.target"
+LEGACY_QUEUE_SERVICE="/etc/systemd/system/dezerx.service"
+PHP_OCTANE_INI_DIR="/etc/dezerx/php-octane.d"
+PHP_CRON_INI_DIR="/etc/dezerx/php-cron.d"
+OPCACHE_FILE_CACHE_DIR="/var/cache/dezerx/opcache"
+OPCACHE_CRON_FILE_CACHE_DIR="/var/cache/dezerx/opcache-root"
+NGINX_UPSTREAM_CONF="/etc/nginx/conf.d/spartan-octane.conf"
+
+# ---------------------------------------------------------------------------
+# Choices. CLI flags fill these first, the wizard fills the rest.
+# ---------------------------------------------------------------------------
+ACTION=""
+CHOICE=""
+NONINTERACTIVE=0
+SHOW_HELP=0
+SHOW_VERSION=0
+DEMO=0
+DEBUG=0
+FORCE_PLAIN=0
+FORCE_ASCII=0
+UI_NO_COLOR=0
+USED_APP_DIR=0
+OVERWRITE=0
+SKIP_UPGRADE=0
+
+DOMAIN=""
+LICENSE_KEY=""
+PRODUCT_ID=""
+PRODUCT_NAME=""
+WEB=""
+DB_ENGINE=""
+DB_HOST="127.0.0.1"
+DB_PORT="3306"
+DB_NAME="dezerx"
+DB_USER="dezer"
+DB_PASS=""
+DB_ROOT_PASS=""
+DB_PASS_GENERATED=0
+SSL_MODE=""             # install | assume | later (1.x called this certbot_choice)
+SSL_EMAIL=""
+ENABLE_IPV6=0
+IPV6_FROM_CLI=0
+FORCE_SWAP=0
+SWAP_SIZE_MB=2048
+
+KEEP_NGINX=0
+KEEP_CSS=1
+KEEP_THEMES=1
+KEEP_PORTALS=1
+KEEP_EMAILS=1
+KEEP_FAVICON=1
+declare -A KEEP_FROM_CLI=()
+
+# Uninstall selections
+RM_FINAL_BACKUP=1
+RM_DATABASE=0
+RM_BACKUPS=0
+RM_CERT=0
+
+# ---------------------------------------------------------------------------
+# Runtime state
+# ---------------------------------------------------------------------------
+RUN_DIR=""
+RUN_STARTED=0
+DISTRO_ID=""
+DISTRO_VER=""
+DISTRO_CODENAME=""
+DISTRO_NAME=""
+DISTRO_LIKE=""
+OS_FAMILY=""
+OS_SUPPORT=""
+OS_SUPPORT_NOTE=""
+ARCH=""
+CPU_CORES=""
+MEM_TOTAL_MB=""
+ASKED_WORKERS=0
+SEVENZIP_BIN=""
+NGINX_MODE=""
+NGINX_CONF_PATH=""
+NGINX_CONF_OLD_PATH=""
+NGINX_CONF_OLD_SYMLINK=""
+NGINX_ENABLED=""
+CERT_DIR=""
+EXISTING_DB_SERVER=""
+EXISTING_DB_VERSION=""
+DB_ROOT_METHOD=""
+INSTALLED_VERSION=""
+AVAILABLE_VERSION=""
+LICENSE_DOMAIN=""
+DNS_STATUS=""
+DNS_RESOLVED=""
+PUBLIC_IPV4=""
+SSL_RESULT=""
+css_save_methode=""
+update_tmpdir=""
+EXCLUDE_TMPDIR=""
+UPDATE_TOUCHED=0
+UPDATE_ROLLED_BACK=""
+APP_IN_MAINTENANCE=0
+BACKUP_TS=""
+APP_BACKUP_FILE=""
+DB_BACKUP_FILE=""
+PHP_BACKUP_FILE=""
+IONCUBE_BACKUP_FILE=""
+NGINX_BACKUP_FILE=""
+NGINX_RESTORE_PATH=""
+SYS_BACKUP_FILE=""
+declare -a WARNINGS=()
+declare -a NOTES=()
+declare -a CLEANUP_PATHS=()
