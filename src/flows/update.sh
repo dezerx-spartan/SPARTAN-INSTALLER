@@ -288,7 +288,7 @@ update_run() {
         else
             summary_add "{e}${G_FAIL}{/} The automatic restore did not finish. Restore by hand:"
             summary_add "  tar -xzf ${APP_BACKUP_FILE} -C $(dirname "$APP_DIR")"
-            summary_add "  gunzip < ${DB_BACKUP_FILE} | mysql ${DB_NAME}"
+            summary_add "  $(db_restore_hint "$DB_BACKUP_FILE")"
         fi
         local w
         for w in "${ROLLBACK_WARNINGS[@]}"; do WARNINGS+=("Rollback: ${w}"); done

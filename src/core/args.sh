@@ -93,8 +93,9 @@ parse_args() {
             --db-type)
                 case "${val,,}" in
                     mariadb | mysql) DB_ENGINE="${val,,}" ;;
+                    postgresql | postgres | pgsql) DB_ENGINE="postgresql" ;;
                     *)
-                        arg_error "Unknown/unsupported database type: ${val} (use mariadb or mysql)"
+                        arg_error "Unknown/unsupported database type: ${val} (use mariadb, mysql or postgresql)"
                         return 1
                         ;;
                 esac
@@ -190,6 +191,7 @@ parse_args() {
             --db-port)
                 port_valid "$val" || { arg_error "Invalid database port: ${val}"; return 1; }
                 DB_PORT="$val"
+                DB_PORT_SET=1
                 ;;
             --db-name)
                 db_ident_valid "$val" || { arg_error "Invalid database name: ${val} (letters, digits and _ only)"; return 1; }
@@ -252,11 +254,13 @@ Install:
   --ssl-mode MODE           install (Let's Encrypt, default), assume (self-signed)
                             or later (HTTP only)
   --email ADDRESS           Let's Encrypt account email (default admin@DOMAIN)
-  --db-type ENGINE          mariadb (default) or mysql; an existing server is reused
+  --db-type ENGINE          mariadb (default), mysql or postgresql; an existing
+                            server is reused
   --db-host, --db-port, --db-name, --db-user, --db-pass
-                            Database settings (defaults 127.0.0.1, 3306, dezerx,
-                            dezer, random password)
-  --db-root-pass PASS       Root password when root cannot log in through the socket
+                            Database settings (defaults 127.0.0.1, 3306 or 5432,
+                            dezerx, dezer, random password)
+  --db-root-pass PASS       Root password (postgres password for PostgreSQL) when
+                            the local socket login does not work
   --webserver nginx         Accepted for compatibility; Nginx is the only option
   --overwrite               Replace an existing installation in --app-dir (a backup
                             is taken first)

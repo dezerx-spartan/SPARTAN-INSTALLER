@@ -40,7 +40,7 @@ demo_overrides() {
     startup_checks() {
         sleep 0.8
         preflight_run
-        EXISTING_DB_SERVER=""
+        EXISTING_DB_SERVER="" EXISTING_MY_SERVER="" EXISTING_PG_VERSION=""
         if [[ -n "${SPARTAN_DEMO_INSTALLED:-}" ]]; then
             DETECTED_APP_DIR="/var/www/spartan" DETECTED_DOMAIN="dash.example.com" DETECTED_VERSION="6.0.2"
         fi
@@ -54,6 +54,7 @@ demo_overrides() {
         return 1
     }
     db_mysql_available() { return 0; }
+    db_server_detect() { EXISTING_DB_SERVER=""; return 1; }
     db_root_access_ok() { return 0; }
     db_check_connection() { sleep 0.4; return 0; }
     port_owner() { :; }

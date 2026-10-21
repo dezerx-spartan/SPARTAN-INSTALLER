@@ -3,6 +3,23 @@ db_is_local() {
 }
 
 db_client() { if have mariadb; then echo mariadb; else echo mysql; fi; }
+
+db_client_available() {
+    if db_is_pg; then have psql; else have mysql || have mariadb; fi
+}
+
+db_client_version() {
+    if db_is_pg; then psql --version; else "$(db_client)" --version; fi
+}
+
+db_install_client() {
+    db_client_available && return 0
+    if db_is_pg; then
+        pg_install_client
+    else
+        pkg_install_any mariadb-client default-mysql-client mysql-client mariadb
+    fi
+}
 db_dump_bin() { if have mariadb-dump; then echo mariadb-dump; else echo mysqldump; fi; }
 
 _cnf_escape() {
@@ -54,24 +71,38 @@ db_app_sql() {
 }
 
 db_check_connection() {
+    db_is_pg && { pg_check_connection; return; }
     db_app_cnf
     "$(db_client)" --defaults-extra-file="$REPLY" -e "SELECT 1;" "$DB_NAME" >/dev/null
 }
 
 db_server_detect() {
-    EXISTING_DB_SERVER=""
-    EXISTING_DB_VERSION=""
+    pg_server_detect || true
+    my_server_detect || true
+    if db_is_pg; then
+        EXISTING_DB_SERVER="${EXISTING_PG_VERSION:+postgresql}"
+        EXISTING_DB_VERSION="$EXISTING_PG_VERSION"
+    else
+        EXISTING_DB_SERVER="$EXISTING_MY_SERVER"
+        EXISTING_DB_VERSION="$EXISTING_MY_VERSION"
+    fi
+    [[ -n "$EXISTING_DB_SERVER" ]]
+}
+
+my_server_detect() {
+    EXISTING_MY_SERVER=""
+    EXISTING_MY_VERSION=""
     local bin out
     for bin in /usr/sbin/mariadbd /usr/sbin/mysqld /usr/libexec/mysqld /usr/libexec/mariadbd; do
         [[ -x "$bin" ]] || continue
         out="$("$bin" --version 2>/dev/null)"
         [[ -n "$out" ]] || continue
         if [[ "$out" == *MariaDB* ]]; then
-            EXISTING_DB_SERVER="mariadb"
-            EXISTING_DB_VERSION="$(sed -nE 's/.*(Distrib |Ver )([0-9]+\.[0-9]+\.[0-9]+)-MariaDB.*/\2/p' <<<"$out")"
+            EXISTING_MY_SERVER="mariadb"
+            EXISTING_MY_VERSION="$(sed -nE 's/.*(Distrib |Ver )([0-9]+\.[0-9]+\.[0-9]+)-MariaDB.*/\2/p' <<<"$out")"
         else
-            EXISTING_DB_SERVER="mysql"
-            EXISTING_DB_VERSION="$(sed -nE 's/.*Ver ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' <<<"$out")"
+            EXISTING_MY_SERVER="mysql"
+            EXISTING_MY_VERSION="$(sed -nE 's/.*Ver ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' <<<"$out")"
         fi
         return 0
     done
@@ -83,6 +114,7 @@ db_server_label() {
     case "$e" in
         mariadb) printf 'MariaDB%s' "${v:+ $v}" ;;
         mysql) printf 'MySQL%s' "${v:+ $v}" ;;
+        postgresql) printf 'PostgreSQL%s' "${v:+ $v}" ;;
         *) printf 'database server' ;;
     esac
 }
@@ -105,6 +137,7 @@ db_service_name() {
 }
 
 install_db_engine() {
+    db_is_pg && { pg_install_engine; return; }
     if db_server_detect; then
         echo "Using the installed $(db_server_label)."
     elif [[ "${DB_ENGINE:-mariadb}" == mysql ]]; then
@@ -126,6 +159,7 @@ install_db_engine() {
 }
 
 db_root_sql() {
+    db_is_pg && { pg_super_sql "$1"; return; }
     local sql="$1" client
     client="$(db_client)"
     if printf 'SELECT 1;\n' | HOME=/root "$client" --protocol=socket -uroot >/dev/null 2>&1; then
@@ -144,6 +178,7 @@ db_root_sql() {
 }
 
 db_root_access_ok() {
+    db_is_pg && { pg_root_access_ok; return; }
     have mysql || have mariadb || return 0
     db_server_detect || return 0
     db_root_sql "SELECT 1;" >/dev/null 2>&1
@@ -157,6 +192,7 @@ _sql_str() {
 }
 
 db_create() {
+    db_is_pg && { pg_create; return; }
     local user host pass
     user="$(_sql_str "$DB_USER")"
     host="$(_sql_str "$DB_HOST")"
@@ -169,6 +205,7 @@ FLUSH PRIVILEGES;"
 }
 
 config_db_tuning() {
+    db_is_pg && { pg_config_tuning; return; }
     db_is_local || { echo "Remote database, not tuning."; return 0; }
     local dir="" c
     for c in /etc/mysql/mariadb.conf.d /etc/my.cnf.d /etc/mysql/mysql.conf.d /etc/mysql/conf.d; do
@@ -193,6 +230,7 @@ config_db_tuning() {
 }
 
 db_dump() {
+    db_is_pg && { pg_dump_db "$1"; return; }
     local out="$1"
     db_app_cnf
     (
@@ -208,6 +246,7 @@ db_dump() {
 }
 
 db_restore() {
+    db_is_pg && { pg_restore_db "$1"; return; }
     local file="$1" client drops
     client="$(db_client)"
     db_app_cnf
@@ -225,8 +264,25 @@ db_restore() {
 }
 
 db_size_mb() {
+    db_is_pg && { pg_size_mb; return; }
     db_app_cnf
     "$(db_client)" --defaults-extra-file="$REPLY" -N -B -e \
         "SELECT CEIL(COALESCE(SUM(data_length + index_length), 0) / 1048576) FROM information_schema.tables WHERE table_schema = DATABASE();" \
         "$DB_NAME" 2>/dev/null
+}
+
+db_drop() {
+    db_is_pg && { pg_drop; return; }
+    local user host
+    user="$(_sql_str "$DB_USER")"
+    host="$(_sql_str "$DB_HOST")"
+    db_root_sql "DROP DATABASE IF EXISTS \`${DB_NAME}\`; DROP USER IF EXISTS '${user}'@'${host}'; FLUSH PRIVILEGES;"
+}
+
+db_restore_hint() {
+    if db_is_pg; then
+        printf 'gunzip < %s | psql -h %s -p %s -U %s %s' "$1" "$DB_HOST" "$DB_PORT" "$DB_USER" "$DB_NAME"
+    else
+        printf 'gunzip < %s | mysql %s' "$1" "$DB_NAME"
+    fi
 }

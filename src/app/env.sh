@@ -62,7 +62,7 @@ app_env_setup() {
     env_write_value DOMAIN "$DOMAIN"
     env_write_value LICENSE_KEY "$LICENSE_KEY"
     env_write_value PRODUCT_ID "$PRODUCT_ID"
-    env_write_value DB_CONNECTION mysql
+    if db_is_pg; then env_write_value DB_CONNECTION pgsql; else env_write_value DB_CONNECTION mysql; fi
     env_write_value DB_HOST "$DB_HOST"
     env_write_value DB_PORT "$DB_PORT"
     env_write_value DB_DATABASE "$DB_NAME"
@@ -120,11 +120,12 @@ app_get_var() {
     local conn
     conn="$(env_read_value DB_CONNECTION)"
     DB_HOST="${DB_HOST:-127.0.0.1}"
-    DB_PORT="${DB_PORT:-3306}"
     case "$conn" in
-        mysql | mariadb) DB_ENGINE="${DB_ENGINE:-$conn}" ;;
+        mysql | mariadb) [[ -z "$DB_ENGINE" ]] || db_is_pg && DB_ENGINE="$conn" ;;
+        pgsql) DB_ENGINE="postgresql" ;;
         *) DB_ENGINE="${DB_ENGINE:-mariadb}" ;;
     esac
+    DB_PORT="${DB_PORT:-$(db_default_port)}"
     PRODUCT_NAME="$(license_product_name "$PRODUCT_ID")"
     secret_add "$LICENSE_KEY" "$DB_PASS"
 

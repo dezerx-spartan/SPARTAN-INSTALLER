@@ -219,7 +219,7 @@ collect_bundle() {
         php -m 2>&1 | tr '\n' ' '
         echo
         nginx -v 2>&1
-        "$(db_client)" --version 2>&1
+        db_client_version 2>&1
         node -v 2>&1
         echo "App: ${APP_DIR} version $(app_version_of "$APP_DIR")"
     } >"${d}/system.txt" 2>&1

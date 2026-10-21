@@ -5,7 +5,7 @@ scr_install_welcome() {
     text="Welcome to the DezerX Spartan installer.
 
 This installer will:
-  - Install PHP ${PHP_VER} with ionCube, Nginx, MariaDB or MySQL, $(kv_target_name) and Node.js
+  - Install PHP ${PHP_VER} with ionCube, Nginx, MariaDB, MySQL or PostgreSQL, $(kv_target_name) and Node.js
   - Download DezerX Spartan with your license key
   - Set up Octane, queue workers and the scheduler
   - Secure your domain with a free Let's Encrypt certificate
@@ -131,15 +131,34 @@ scr_install_location() {
     done
 }
 
-scr_install_db_engine_applies() { [[ -z "$EXISTING_DB_SERVER" ]] && db_is_local; }
-
 scr_install_db_engine() {
-    local -a items=(mariadb "MariaDB" "Recommended")
-    if db_mysql_available 2>/dev/null; then
-        items+=(mysql "MySQL" "Oracle MySQL server")
+    local -a items=()
+    local text default
+    if ! db_is_local; then
+        text="Which database server does ${DB_HOST} run?"
+        items=(mariadb "MariaDB or MySQL" "Remote server" postgresql "PostgreSQL" "Remote server")
+        default="${DB_ENGINE:-mariadb}"
+        [[ "$default" == mysql ]] && default=mariadb
+    else
+        text="Which database server should DezerX Spartan use?"
+        if [[ -n "$EXISTING_MY_SERVER" ]]; then
+            items+=("$EXISTING_MY_SERVER" "$(db_server_label "$EXISTING_MY_SERVER" "$EXISTING_MY_VERSION")" "Installed, will be used")
+        else
+            items+=(mariadb "MariaDB" "Recommended")
+            db_mysql_available 2>/dev/null && items+=(mysql "MySQL" "Oracle MySQL server")
+        fi
+        if [[ -n "$EXISTING_PG_VERSION" ]]; then
+            items+=(postgresql "$(db_server_label postgresql "$EXISTING_PG_VERSION")" "Installed, will be used")
+        else
+            items+=(postgresql "PostgreSQL" "Installed from the system packages")
+        fi
+        default="${DB_ENGINE:-${EXISTING_MY_SERVER:-${EXISTING_PG_VERSION:+postgresql}}}"
+        [[ -n "$EXISTING_MY_SERVER" && "$default" != postgresql ]] && default="$EXISTING_MY_SERVER"
     fi
-    ui_radio "Database server" "No database server is installed yet. Which one should be installed?" "${DB_ENGINE:-mariadb}" "${items[@]}" || return $?
+    ui_radio "Database server" "$text" "${default:-mariadb}" "${items[@]}" || return $?
     DB_ENGINE="$UI_RESULT"
+    db_server_detect || true
+    db_port_default_apply
 }
 
 _validate_db_form() {
@@ -149,8 +168,8 @@ _validate_db_form() {
     port_valid "$port" || { FORM_ERROR="The port must be a number between 1 and 65535."; FORM_ERROR_FIELD=1; return 1; }
     db_ident_valid "$name" || { FORM_ERROR="Database names may contain letters, digits and _ only."; FORM_ERROR_FIELD=2; return 1; }
     db_ident_valid "$user" || { FORM_ERROR="User names may contain letters, digits and _ only."; FORM_ERROR_FIELD=3; return 1; }
-    if [[ "$user" == root ]]; then
-        FORM_ERROR="Use a dedicated user, not root."
+    if [[ "$user" == root || "$user" == postgres ]]; then
+        FORM_ERROR="Use a dedicated user, not ${user}."
         FORM_ERROR_FIELD=3
         return 1
     fi
@@ -166,13 +185,13 @@ _validate_root_pw() {
     DB_ROOT_PASS="${FORM_VALUES[0]}"
     secret_add "$DB_ROOT_PASS"
     if ! ui_busy "Checking the root password${G_ELLIPSIS}" db_root_sql "SELECT 1;"; then
-        FORM_ERROR="That password does not work for root."
+        FORM_ERROR="That password does not work for $(db_root_name)."
         return 1
     fi
 }
 
 _db_remote_check() {
-    have mysql || have mariadb || return 0
+    db_client_available || return 0
     if ! ui_busy "Connecting to ${DB_HOST}:${DB_PORT}${G_ELLIPSIS}" db_check_connection; then
         ui_error "Database" "Could not connect to {b}$(tx "${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}"){/}.\n\nFor a remote database server the database and user must already exist and accept connections from this server." "${G_BACK} Back"
         return 1
@@ -212,9 +231,9 @@ scr_install_database() {
         fi
         if [[ -n "$EXISTING_DB_SERVER" ]] && ! db_root_access_ok; then
             form_reset
-            form_add "Root password" "" password
+            form_add "$(db_root_name) password" "" password
             FORM_VALIDATE=_validate_root_pw
-            ui_form "Database" "Root cannot log in to $(db_server_label) through the local socket. Enter the database root password so the installer can create the database and user. It is not stored." || continue
+            ui_form "Database" "$(db_root_name) cannot log in to $(db_server_label) through the local socket. Enter the $(db_root_name) password so the installer can create the database and user. It is not stored." || continue
         fi
         return 0
     done
@@ -307,6 +326,8 @@ install_review_text() {
     local db octane ssl t
     if db_is_local; then
         if [[ -n "$EXISTING_DB_SERVER" ]]; then db="$(db_server_label) (installed)"; else db="$(db_server_label "${DB_ENGINE:-mariadb}" "")"; fi
+    elif db_is_pg; then
+        db="remote PostgreSQL server"
     else
         db="remote server"
     fi
@@ -407,8 +428,8 @@ ph_database() {
         task "Installing the database server" install_db_engine || return 1
         task_try "Tuning the database" config_db_tuning
         task "Creating database ${DB_NAME} and user ${DB_USER}" db_create || return 1
-    elif ! have mysql && ! have mariadb; then
-        task "Installing the database client" pkg_install_any mariadb-client default-mysql-client mysql-client mariadb || return 1
+    elif ! db_client_available; then
+        task "Installing the database client" db_install_client || return 1
     fi
     task "Testing the database connection" db_check_connection || {
         phase_fail "DezerX Spartan cannot connect to ${DB_USER}@${DB_HOST}:${DB_PORT}/${DB_NAME}."
@@ -557,6 +578,8 @@ flow_install_noninteractive() {
     WEB="nginx"
     [[ -n "$SSL_MODE" ]] || SSL_MODE="install"
     [[ -n "$DB_ENGINE" ]] || DB_ENGINE="${EXISTING_DB_SERVER:-mariadb}"
+    db_server_detect || true
+    db_port_default_apply
     if [[ -z "$DB_PASS" ]]; then
         DB_PASS="$(random_password)"
         DB_PASS_GENERATED=1

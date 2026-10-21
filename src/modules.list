@@ -33,6 +33,7 @@ stack/composer.sh
 stack/nodejs.sh
 stack/nginx.sh
 stack/database.sh
+stack/postgres.sh
 stack/redis.sh
 stack/ssl.sh
 

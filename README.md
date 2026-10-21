@@ -1,6 +1,6 @@
 # DezerX Spartan Installer
 
-Installs, updates and maintains [DezerX Spartan](https://market.dezerx.com) on a Linux server: PHP with ionCube, Nginx, MariaDB or MySQL, Valkey, Node.js with pnpm, Laravel Octane, queue workers, the scheduler and SSL.
+Installs, updates and maintains [DezerX Spartan](https://market.dezerx.com) on a Linux server: PHP with ionCube, Nginx, MariaDB, MySQL or PostgreSQL, Valkey, Node.js with pnpm, Laravel Octane, queue workers, the scheduler and SSL.
 
 Version 2 replaces the whiptail dialogs of 1.x with a full-screen interface, adds automatic rollback for updates and fixes a long list of 1.x problems (see [CHANGELOG.md](CHANGELOG.md)). Paths, service names, `.env` keys, `script_options.json` and every 1.x command line flag stay the same, so existing servers update in place.
 
@@ -19,7 +19,9 @@ sudo bash -c "$(curl -fsSL https://github.com/dezerx-spartan/SPARTAN-INSTALLER/r
   --non-interactive --install --license=SPARTANPROFESSIONAL_XXXX --domain=dash.example.com --ssl-mode=install
 ```
 
-`--license` and `--domain` are required; everything else has a default (Nginx, MariaDB or the database server that is already installed, a generated database password, Octane on, worker counts from CPU and RAM, Let's Encrypt).
+`--license` and `--domain` are required; everything else has a default (Nginx, MariaDB or the MariaDB/MySQL server that is already installed, a generated database password, Octane on, worker counts from CPU and RAM, Let's Encrypt).
+
+Add `--db-type=postgresql` to use PostgreSQL (13 or newer) instead. An installed PostgreSQL server is reused, otherwise the distribution's packages are installed. The installer logs in as `postgres` through the local socket. If that does not work, pass the `postgres` password with `--db-root-pass`. For a remote PostgreSQL server, the database must already exist and have the `citext` extension, or the user must be allowed to create it.
 
 ### From a clone
 
@@ -72,7 +74,7 @@ Choices made in the update wizard are written back to `keep`, so automatic updat
 --app-dir PATH           application folder (default /var/www/spartan)
 --license KEY  --domain HOST  --email ADDRESS
 --ssl-mode install|assume|later
---db-type mariadb|mysql  --db-host --db-port --db-name --db-user --db-pass --db-root-pass
+--db-type mariadb|mysql|postgresql  --db-host --db-port --db-name --db-user --db-pass --db-root-pass
 --octane | --no-octane  --octane-workers N  --octane-port PORT  --queue-workers N
 --keep-nginx|css|themes|portals|emails|favicon  (and --no-keep-*)
 --options-file NAME  --backup-dir PATH  --add-swap [SIZE]  --ipv6 [true|false]

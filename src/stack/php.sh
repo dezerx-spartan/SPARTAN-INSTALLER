@@ -102,6 +102,7 @@ php_packages_apt() {
     PHP_PKGS=("php${v}" "php${v}-cli" "php${v}-fpm" "php${v}-gd" "php${v}-mysql" "php${v}-mbstring"
         "php${v}-bcmath" "php${v}-xml" "php${v}-curl" "php${v}-zip" "php${v}-intl")
     [[ -n "$(apt_candidate "php${v}-opcache")" ]] && PHP_PKGS+=("php${v}-opcache")
+    db_is_pg && PHP_PKGS+=("php${v}-pgsql")
     PHP_EXTRA_PKGS=()
     for p in sockets redis imap; do
         [[ -n "$(apt_candidate "php${v}-${p}")" ]] && PHP_EXTRA_PKGS+=("php${v}-${p}")
@@ -126,6 +127,9 @@ php_install_packages() {
         pkg_install php-sockets php-process || pkg_install php-process || true
         pkg_install php-redis || pkg_install php-pecl-redis6 || pkg_install php-pecl-redis5 || true
         pkg_install php-imap || pkg_install php-pecl-imap || true
+        if db_is_pg; then
+            pkg_install php-pgsql || return 1
+        fi
     fi
     have php || { phase_fail "PHP was installed but the php command is missing."; return 1; }
     local got

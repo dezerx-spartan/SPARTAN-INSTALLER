@@ -71,13 +71,6 @@ remove_nginx_site() {
     nginx -t && systemctl reload nginx
 }
 
-drop_database() {
-    local user host
-    user="$(_sql_str "$DB_USER")"
-    host="$(_sql_str "$DB_HOST")"
-    db_root_sql "DROP DATABASE IF EXISTS \`${DB_NAME}\`; DROP USER IF EXISTS '${user}'@'${host}'; FLUSH PRIVILEGES;"
-}
-
 delete_certificate() {
     [[ -n "$DOMAIN" ]] || return 0
     if have certbot && [[ -d "${LETSENCRYPT_LIVE}/${DOMAIN}" ]]; then
@@ -100,7 +93,7 @@ un_remove() {
     task "Removing the Nginx site" remove_nginx_site || warn_add "Nginx did not reload cleanly; check: nginx -t"
     task "Deleting ${APP_DIR}" safe_rm_rf "$APP_DIR" || return 1
     if ((RM_DATABASE)); then
-        task "Deleting the database and user" drop_database || warn_add "The database could not be deleted; remove ${DB_NAME} by hand."
+        task "Deleting the database and user" db_drop || warn_add "The database could not be deleted; remove ${DB_NAME} by hand."
     fi
     if ((RM_CERT)); then
         task "Deleting the SSL certificate" delete_certificate || warn_add "The certificate could not be deleted."

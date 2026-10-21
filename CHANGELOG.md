@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.0.0-beta.10
+
+### New
+
+- PostgreSQL as a third database choice (`--db-type postgresql`, also `postgres` or `pgsql`; the wizard lists it next to MariaDB and MySQL). DezerX Spartan needs PostgreSQL 13 or newer: Debian and Ubuntu install the distribution's version, AlmaLinux/Rocky/RHEL 8 and 9 enable the newest `postgresql` module stream. The database is created with the `citext` extension, the PHP `pgsql` extension is installed, `.env` gets `DB_CONNECTION=pgsql` and the port defaults to 5432.
+- Everything that handles the database works for PostgreSQL too: connection checks, tuning (`shared_buffers`, `effective_cache_size` and slow-query logging through `ALTER SYSTEM`), backups with `pg_dump`, the automatic restore on a failed update, the size check before backups, the health check, the support bundle and the uninstaller.
+- On RHEL-family systems, `pg_hba.conf` is switched from `ident` to password logins for 127.0.0.1 and ::1 so the application can connect (a copy is kept as `pg_hba.conf.spartan.bak`).
+
+### Changed
+
+- The database server screen is shown for every install, so an existing MariaDB or MySQL server no longer rules out PostgreSQL. An installed server is preselected and reused. Without `--db-type`, non-interactive installs keep choosing the installed MariaDB/MySQL server, or MariaDB.
+
 ## 2.0.0-beta.9
 
 ### Changed
